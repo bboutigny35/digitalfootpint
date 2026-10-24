@@ -390,6 +390,8 @@ export function AdminPage() {
                 <th>{t('adminMethod')}</th>
                 <th>{t('adminStatus')}</th>
                 <th>{t('adminConnector')}</th>
+                <th>{t('adminLastCheck')}</th>
+                <th>{t('adminLastError')}</th>
               </tr>
             </thead>
             <tbody>
@@ -399,6 +401,14 @@ export function AdminPage() {
                   <td>{platform.verification_method}</td>
                   <td>{platform.default_status}</td>
                   <td>{platform.connector_id ?? '—'}</td>
+                  <td>
+                    {platform.last_checked_at
+                      ? new Date(platform.last_checked_at).toLocaleString(
+                          locale === 'fr' ? 'fr-FR' : 'en-GB',
+                        )
+                      : '—'}
+                  </td>
+                  <td>{platform.last_error_code ?? '—'}</td>
                 </tr>
               ))}
             </tbody>

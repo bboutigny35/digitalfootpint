@@ -17,6 +17,8 @@ import {
   type IdentityProfile,
   type IdentityProfileInput,
   type OsintResult,
+  type PlatformCheckList,
+  type PlatformCheckStatus,
   type ResultPage,
   type Scan,
   type ScanComparison,
@@ -40,6 +42,17 @@ const comparisonLabelKeys: Record<ComparisonCategory, MessageKey> = {
   inaccessible: 'workspaceCompareInaccessible',
   not_reverified: 'workspaceCompareNotReverified',
   excluded_false_positive: 'workspaceCompareFalsePositive',
+}
+
+const platformStatusLabelKeys: Record<PlatformCheckStatus, MessageKey> = {
+  PUBLIC_MATCH: 'workspacePlatformPublicMatch',
+  POSSIBLE_MATCH: 'workspacePlatformPossibleMatch',
+  NO_PUBLIC_RESULT: 'workspacePlatformNoPublicResult',
+  USER_VERIFIED: 'workspacePlatformUserVerified',
+  NOT_VERIFIABLE: 'workspacePlatformNotVerifiable',
+  RATE_LIMITED: 'workspacePlatformRateLimited',
+  ACCESS_RESTRICTED: 'workspacePlatformAccessRestricted',
+  ERROR: 'workspacePlatformError',
 }
 
 type ProfileDraft = Record<
@@ -94,6 +107,8 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
   const [baselineScan, setBaselineScan] = useState('')
   const [currentScan, setCurrentScan] = useState('')
   const [comparison, setComparison] = useState<ScanComparison | null>(null)
+  const [platformChecks, setPlatformChecks] =
+    useState<PlatformCheckList | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null)
@@ -363,6 +378,22 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : t('workspaceCompareFailed'),
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function showPlatformChecks(scanId: string) {
+    setBusy(true)
+    try {
+      setPlatformChecks(await osintApi.platformChecks(scanId))
+      setError(null)
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : t('workspacePlatformChecksFailed'),
       )
     } finally {
       setBusy(false)
@@ -820,6 +851,15 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                             <XCircle size={17} />
                           </button>
                         )}
+                        {scan.status === 'completed' && (
+                          <button
+                            className="secondary-button whitespace-nowrap"
+                            disabled={busy}
+                            onClick={() => void showPlatformChecks(scan.id)}
+                          >
+                            {t('workspacePlatformChecks')}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -827,6 +867,41 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
               </table>
               {scans.length === 0 && <Empty text={t('workspaceNoSearches')} />}
             </section>
+            {platformChecks && (
+              <section className="panel overflow-x-auto" aria-live="polite">
+                <h2 className="section-title">
+                  {t('workspacePlatformChecksTitle')}
+                </h2>
+                <p className="section-copy">
+                  {platformChecks.methodology_note}
+                </p>
+                <table className="mt-4">
+                  <thead>
+                    <tr>
+                      <th>{t('workspacePlatform')}</th>
+                      <th>{t('workspaceMethod')}</th>
+                      <th>{t('workspaceStatus')}</th>
+                      <th>{t('workspaceResultsCount')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {platformChecks.items.map((check) => (
+                      <tr key={check.platform_identifier}>
+                        <td className="font-semibold">
+                          {check.platform_identifier}
+                        </td>
+                        <td>{check.verification_method}</td>
+                        <td>{t(platformStatusLabelKeys[check.status])}</td>
+                        <td>{check.result_count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {platformChecks.items.length === 0 && (
+                  <Empty text={t('workspaceNoPlatformChecks')} />
+                )}
+              </section>
+            )}
             <section className="panel">
               <h2 className="section-title">{t('workspaceCompareSearches')}</h2>
               <p className="section-copy">{t('workspaceCompareDescription')}</p>

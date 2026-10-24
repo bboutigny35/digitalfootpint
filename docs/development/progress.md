@@ -134,12 +134,13 @@ critères documentés ; ce report n'est pas présenté comme une fonctionnalité
       refus des redirections et tests par transport simulé.
 - [x] Évaluer Gravatar, Docker Hub et npm puis reporter leur intégration plutôt que
       d'utiliser une API à clé non configurée, authentifiée, héritée ou non documentée.
-- [ ] Intégrer les contrôles de plateformes et leur état de fonctionnement aux
-      vues utilisateur et administrative.
+- [x] Intégrer les contrôles de plateformes à la vue utilisateur avec chargement
+      à la demande et note méthodologique, puis exposer dernier contrôle et erreur
+      dans le catalogue administratif, en français et en anglais.
 
-La phase E reste **en cours** : le contrat persistant et le moteur systématique
-sont en place. Les connecteurs prioritaires supplémentaires et leur présentation
-dans l'interface restent à réaliser.
+La phase E reste **en cours** : le contrat persistant, le moteur systématique,
+Bluesky et les vues utilisateur/administrative sont en place. L'ajout éventuel
+d'autres connecteurs prioritaires exige encore une méthode officielle adaptée.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

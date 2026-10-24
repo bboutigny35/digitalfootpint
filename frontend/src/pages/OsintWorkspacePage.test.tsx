@@ -270,6 +270,61 @@ it('compare deux scans terminés sans présenter une absence comme supprimée', 
   )
 })
 
+it('affiche les contrôles de plateformes sans interpréter un résultat négatif', async () => {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input)
+    let body: object = []
+    if (url.endsWith('/scans')) {
+      body = [
+        {
+          id: 'scan-platforms',
+          profile_id: 'profile-1',
+          status: 'completed',
+          connector_ids: ['bluesky'],
+          progress: 1,
+          error_code: null,
+          created_at: '2026-10-24T10:00:00Z',
+        },
+      ]
+    } else if (url.endsWith('/scans/scan-platforms/platform-checks')) {
+      body = {
+        scan_id: 'scan-platforms',
+        items: [
+          {
+            platform_identifier: 'bluesky',
+            connector_id: 'bluesky',
+            verification_method: 'official_api',
+            status: 'NO_PUBLIC_RESULT',
+            result_count: 0,
+            error_code: null,
+            checked_at: '2026-10-24T10:01:00Z',
+          },
+        ],
+        methodology_note:
+          "Aucun résultat public ne prouve pas l'absence d'un compte.",
+      }
+    }
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  const user = userEvent.setup()
+  render(<OsintWorkspacePage section="scans" />)
+
+  await user.click(await screen.findByRole('button', { name: 'Contrôles' }))
+
+  expect(await screen.findByText('Contrôles des plateformes')).toBeVisible()
+  expect(screen.getAllByText('bluesky')).toHaveLength(2)
+  expect(screen.getByText('Aucun résultat public observé')).toBeVisible()
+  expect(
+    screen.getByText(
+      "Aucun résultat public ne prouve pas l'absence d'un compte.",
+    ),
+  ).toBeVisible()
+})
+
 it('filtre les résultats avec une pagination serveur', async () => {
   const calls: string[] = []
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {

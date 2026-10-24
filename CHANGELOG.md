@@ -37,6 +37,8 @@
   évaluées et API privée par campagne avec statuts normalisés et explicites.
 - Connecteur Bluesky officiel par résolution exacte de handle, limité, sans clé,
   sans redirection et rattaché au catalogue par la migration réversible `0018`.
+- Consultation à la demande des contrôles de plateformes dans l'historique des
+  campagnes et état du dernier contrôle dans le catalogue administratif.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

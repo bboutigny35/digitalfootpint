@@ -138,6 +138,30 @@ export interface ScanComparison {
   methodology_note: string
 }
 
+export type PlatformCheckStatus =
+  | 'PUBLIC_MATCH'
+  | 'POSSIBLE_MATCH'
+  | 'NO_PUBLIC_RESULT'
+  | 'USER_VERIFIED'
+  | 'NOT_VERIFIABLE'
+  | 'RATE_LIMITED'
+  | 'ACCESS_RESTRICTED'
+  | 'ERROR'
+
+export interface PlatformCheckList {
+  scan_id: string
+  items: Array<{
+    platform_identifier: string
+    connector_id: string | null
+    verification_method: string
+    status: PlatformCheckStatus
+    result_count: number
+    error_code: string | null
+    checked_at: string
+  }>
+  methodology_note: string
+}
+
 export type RemovalRequestStatus =
   | 'draft'
   | 'sent'
@@ -437,6 +461,10 @@ export const osintApi = {
   compareScans: (baselineScanId: string, currentScanId: string) =>
     request<ScanComparison>(
       `/scans/compare/results?baseline_scan_id=${encodeURIComponent(baselineScanId)}&current_scan_id=${encodeURIComponent(currentScanId)}`,
+    ),
+  platformChecks: (scanId: string) =>
+    request<PlatformCheckList>(
+      `/scans/${encodeURIComponent(scanId)}/platform-checks`,
     ),
   results: () => request<OsintResult[]>('/results?limit=200'),
   searchResults: (filters: {
