@@ -35,6 +35,8 @@
   raison de l'inadéquation à la recherche d'identité et des contraintes CDX/WARC.
 - Migration `0017`, finalisation atomique des contrôles de plateformes réellement
   évaluées et API privée par campagne avec statuts normalisés et explicites.
+- Connecteur Bluesky officiel par résolution exacte de handle, limité, sans clé,
+  sans redirection et rattaché au catalogue par la migration réversible `0018`.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

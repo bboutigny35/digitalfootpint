@@ -5,7 +5,7 @@ de son empreinte numérique publique. Le projet privilégie le consentement, la
 minimisation des données et des connecteurs utilisant des API officielles.
 
 > État : version de développement. Le socle authentifié, le worker persistant,
-> les connecteurs GitHub, GitLab, Wayback, Brave Search facultatif et SearXNG local,
+> les connecteurs GitHub, GitLab, Bluesky, Wayback, Brave Search facultatif et SearXNG local,
 > l'interface principale, la planification, la comparaison des scans, les notifications
 > internes, les exports et le suivi des demandes RGPD sont implémentés et testés.
 > Brave n'envoie que noms et pseudonymes, après confirmation, et peut entraîner
@@ -27,7 +27,7 @@ activés, prêts et compatibles avec le profil en une action. Le périmètre res
 celui des fournisseurs configurés et de leurs index. SearXNG local peut agréger
 plusieurs moteurs sans clé fournisseur par utilisateur, mais les moteurs amont
 peuvent limiter ou bloquer les requêtes. Après confirmation, seuls noms et
-pseudonymes sont transmis à ces moteurs. GitHub, GitLab et Wayback apportent des
+pseudonymes sont transmis à ces moteurs. GitHub, GitLab, Bluesky et Wayback apportent des
 sources spécialisées. Aucun résultat ne garantit une couverture exhaustive du Web.
 
 Le backend comprend désormais un premier module cloisonné de surveillance des

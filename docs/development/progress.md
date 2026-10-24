@@ -129,6 +129,11 @@ critères documentés ; ce report n'est pas présenté comme une fonctionnalité
       rappelant que les statuts négatifs ne prouvent pas l'absence de compte.
 - [ ] Implémenter les connecteurs prioritaires supplémentaires uniquement lorsque
       leur méthode publique et autorisée est stable, testable et minimisée.
+- [x] Ajouter Bluesky par résolution exacte de handle via l'API publique AT
+      Protocol, sans nom ni e-mail, avec dix requêtes maximales, quota persistant,
+      refus des redirections et tests par transport simulé.
+- [x] Évaluer Gravatar, Docker Hub et npm puis reporter leur intégration plutôt que
+      d'utiliser une API à clé non configurée, authentifiée, héritée ou non documentée.
 - [ ] Intégrer les contrôles de plateformes et leur état de fonctionnement aux
       vues utilisateur et administrative.
 

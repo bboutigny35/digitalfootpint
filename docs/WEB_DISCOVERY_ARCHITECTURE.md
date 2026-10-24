@@ -65,6 +65,7 @@ Les migrations seront additives et réparties pour faciliter les retours arrièr
 5. `0016` : tâches de découverte par campagne/source, avec priorité, tentatives
    bornées et baux persistants.
 6. `0017` : résultats normalisés de vérification des plateformes par campagne.
+7. `0018` : rattachement réversible de Bluesky à son connecteur officiel.
 
 `Scan` reste la campagne existante et `Result` le résultat public compatible. Les
 nouvelles entités les référencent ; elles ne les dupliquent pas.

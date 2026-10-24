@@ -100,6 +100,9 @@ def build_registry() -> ConnectorRegistry:
     async def searxng_gate() -> None:
         await wait_for_request_slot("searxng", 5, should_stop=stop_requested.is_set)
 
+    async def bluesky_gate() -> None:
+        await wait_for_request_slot("bluesky", 10, should_stop=stop_requested.is_set)
+
     async def brave_quota_exhausted(resume_at: datetime) -> None:
         with SessionLocal() as db:
             defer_provider_until(db, "brave", resume_at)
@@ -113,6 +116,7 @@ def build_registry() -> ConnectorRegistry:
         brave_request_gate=brave_gate,
         brave_quota_exhausted=brave_quota_exhausted,
         searxng_request_gate=searxng_gate,
+        bluesky_request_gate=bluesky_gate,
     )
     with SessionLocal() as db:
         return enabled_registry(db, registry)

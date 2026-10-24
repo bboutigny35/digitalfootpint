@@ -13,9 +13,7 @@ def test_mock_connector_is_available_only_in_test_environment() -> None:
     )
 
     assert "mock" in test_registry.identifiers()
-    assert {"brave", "github", "gitlab", "wayback"}.issubset(
-        test_registry.identifiers()
-    )
+    assert {"bluesky", "brave", "github", "gitlab", "wayback"}.issubset(test_registry.identifiers())
     assert "mock" not in development_registry.identifiers()
     assert "mock" not in production_registry.identifiers()
-    assert {"brave", "gitlab", "wayback"}.issubset(production_registry.identifiers())
+    assert {"bluesky", "brave", "gitlab", "wayback"}.issubset(production_registry.identifiers())

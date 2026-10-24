@@ -25,7 +25,7 @@ PLATFORMS = (
     ("x", "X", "social", "public_index", "NOT_VERIFIABLE", None, 100),
     ("tiktok", "TikTok", "social", "public_index", "NOT_VERIFIABLE", None, 100),
     ("threads", "Threads", "social", "public_index", "NOT_VERIFIABLE", None, 100),
-    ("bluesky", "Bluesky", "social", "public_profile", "NO_PUBLIC_RESULT", None, 70),
+    ("bluesky", "Bluesky", "social", "official_api", "NO_PUBLIC_RESULT", "bluesky", 70),
     ("mastodon", "Mastodon", "social", "public_profile", "NO_PUBLIC_RESULT", None, 70),
     ("reddit", "Reddit", "community", "public_profile", "NO_PUBLIC_RESULT", None, 70),
     ("youtube", "YouTube", "media", "public_profile", "NO_PUBLIC_RESULT", None, 70),

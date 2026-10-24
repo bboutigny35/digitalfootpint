@@ -19,6 +19,7 @@ def build_runtime_registry(
     brave_request_gate: Callable[[], Awaitable[None]] | None = None,
     brave_quota_exhausted: Callable[[datetime], Awaitable[None]] | None = None,
     searxng_request_gate: Callable[[], Awaitable[None]] | None = None,
+    bluesky_request_gate: Callable[[], Awaitable[None]] | None = None,
 ) -> ConnectorRegistry:
     """Ajoute le connecteur hermétique uniquement à l'environnement de test."""
     configuration = settings or get_settings()
@@ -31,6 +32,7 @@ def build_runtime_registry(
         brave_request_gate=brave_request_gate,
         brave_quota_exhausted=brave_quota_exhausted,
         searxng_request_gate=searxng_request_gate,
+        bluesky_request_gate=bluesky_request_gate,
     )
     connectors = list(production.all())
     if configuration.environment == "test":

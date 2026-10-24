@@ -178,6 +178,21 @@ def test_connector_catalog_lists_only_production_connectors(
     assert response.status_code == 200
     assert response.json() == [
         {
+            "identifier": "bluesky",
+            "version": "1.0",
+            "capabilities": ["public_profiles"],
+            "accepted_identifiers": ["pseudonym"],
+            "requires_api_key": False,
+            "enabled": True,
+            "ready": True,
+            "health": "not_checked",
+            "rate_limit_per_minute": 10,
+            "quota_status": "provider_managed",
+            "last_scan_at": None,
+            "result_count": 0,
+            "error_count": 0,
+        },
+        {
             "identifier": "brave",
             "version": "1.0",
             "capabilities": ["web_search"],

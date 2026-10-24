@@ -45,6 +45,27 @@ Le propriétaire consulte ces états avec
 `GET /api/v1/scans/{scan_id}/platform-checks`. L'API ne renvoie aucune donnée
 d'une campagne appartenant à un autre utilisateur et inclut une note de méthode.
 
+## Connecteur Bluesky
+
+Bluesky utilise l'endpoint public officiel AT Protocol
+`com.atproto.identity.resolveHandle`. Seuls les pseudonymes ayant la forme d'un
+handle DNS exact sont envoyés ; les noms, e-mails et pseudonymes libres sont
+exclus. Une campagne effectue au plus dix résolutions, séquentiellement, sous un
+quota persistant de dix requêtes par minute. Les redirections sont refusées et
+une réponse n'est acceptée que si elle contient un DID syntaxiquement valide.
+
+L'évaluation du 24 octobre 2026 a reporté Gravatar, car l'API de profil moderne
+requiert une clé, ainsi que Docker Hub et npm, dont la documentation ne fournit
+pas de contrôle public exact suffisamment stable sans authentification ou route
+héritée. Aucun endpoint non documenté n'est utilisé.
+
+Sources officielles :
+
+- [Bluesky — référence HTTP API](https://docs.bsky.app/docs/api/com-atproto-identity-resolve-handle)
+- [Gravatar — profils par identifiant](https://docs.gravatar.com/rest/api-data-specifications/endpoints-references/)
+- [Docker Hub API](https://docs.docker.com/reference/api/hub/latest/)
+- [npm — registre public](https://docs.npmjs.com/using-npm/registry.html/)
+
 ## Sources Web
 
 Un administrateur peut enregistrer une URL de base via l'interface ou

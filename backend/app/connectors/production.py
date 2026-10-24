@@ -3,6 +3,7 @@
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 
+from app.connectors.bluesky import BlueskyConnector
 from app.connectors.brave import BraveSearchConnector
 from app.connectors.github import GitHubConnector
 from app.connectors.gitlab import GitLabConnector
@@ -22,6 +23,7 @@ def build_production_registry(
     brave_request_gate: Callable[[], Awaitable[None]] | None = None,
     brave_quota_exhausted: Callable[[datetime], Awaitable[None]] | None = None,
     searxng_request_gate: Callable[[], Awaitable[None]] | None = None,
+    bluesky_request_gate: Callable[[], Awaitable[None]] | None = None,
 ) -> ConnectorRegistry:
     configuration = settings or get_settings()
     return ConnectorRegistry(
@@ -42,5 +44,6 @@ def build_production_registry(
             ),
             GitLabConnector(before_request=gitlab_request_gate),
             WaybackConnector(before_request=wayback_request_gate),
+            BlueskyConnector(before_request=bluesky_request_gate),
         ]
     )
