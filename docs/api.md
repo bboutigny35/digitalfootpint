@@ -1,5 +1,14 @@
 # API
 
+## Prévisualisation de la stratégie de recherche
+
+`GET /api/v1/profiles/{profile_id}/search-strategy?mode=standard` retourne le
+plan déterministe du propriétaire sans lancer de scan ni effectuer d'accès
+réseau. Les modes acceptés sont `quick`, `standard` et `deep`. Chaque requête
+indique sa priorité, ses critères, sa portée (`local`, `specialized` ou `general`)
+et si une corroboration est requise. Les e-mails exacts ne reçoivent jamais la
+portée `general`.
+
 L'API est versionnée sous `/api/v1`. OpenAPI et Swagger UI sont servis sur `/docs`.
 
 - `GET /dashboard` : agrégats complets du propriétaire et évolution quotidienne

@@ -21,8 +21,26 @@ Dernière mise à jour : 24 octobre 2026.
 - [x] Autorisation reçue de créer l'historique initial après contrôle des fichiers
       et recherche de secrets ; aucun remote ni tag n'est configuré.
 
-La phase A est **terminée**. Le premier commit doit figer l'état audité ; aucun tag
-de release ni push distant n'est autorisé à ce stade.
+La phase A est **terminée** et figée par le commit initial `c110649`. Aucun tag de
+release ni push distant n'est autorisé à ce stade.
+
+## Phase B — architecture de découverte Web
+
+- [x] Définir l'architecture additive et la séquence des migrations dans
+      `docs/WEB_DISCOVERY_ARCHITECTURE.md`.
+- [x] Ajouter un moteur déterministe de stratégie avec modes rapide, standard et
+      approfondi, budgets stricts, priorités et déduplication.
+- [x] Empêcher les plans d'envoyer un e-mail exact aux moteurs généralistes et
+      marquer toute requête sur le nom seul comme nécessitant une corroboration.
+- [x] Exposer une prévisualisation privée du plan par profil, sans accès réseau ni
+      création de campagne.
+- [x] Valider le moteur et l'API par tests ciblés, puis la suite backend complète,
+      Ruff et mypy strict.
+- [ ] Ajouter les modèles et migrations additives `0012` à `0015` après validation
+      successive de chaque lot sur SQLite et PostgreSQL.
+
+La phase B reste **en cours** : le contrat de stratégie et la trajectoire des
+modèles sont définis ; les migrations et catalogues persistants restent à livrer.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

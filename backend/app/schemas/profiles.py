@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, field_validator
 
+from app.services.search_strategy import QueryScope, SearchMode
+
 
 class ProfileBase(BaseModel):
     first_name: str = Field(min_length=1, max_length=120)
@@ -35,3 +37,20 @@ class ProfileRead(ProfileBase):
     id: str
     created_at: datetime
     updated_at: datetime
+
+
+class PlannedQueryRead(BaseModel):
+    text: str
+    kind: str
+    priority: int
+    scope: QueryScope
+    criteria: tuple[str, ...]
+    requires_corroboration: bool
+
+
+class SearchPlanRead(BaseModel):
+    mode: SearchMode
+    queries: list[PlannedQueryRead]
+    budget: int
+    truncated: bool
+    stages: tuple[str, ...]

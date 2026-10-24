@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user, require_csrf
 from app.core.database import get_db
 from app.models.entities import AuditEvent, IdentityProfile, User
-from app.schemas.profiles import ProfileCreate, ProfileRead, ProfileUpdate
+from app.schemas.profiles import ProfileCreate, ProfileRead, ProfileUpdate, SearchPlanRead
+from app.services.search_strategy import SearchMode, build_search_plan
 
 router = APIRouter(prefix="/profiles", tags=["identités"])
 
@@ -68,6 +69,17 @@ def get_profile(
     profile_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ) -> IdentityProfile:
     return _owned(profile_id, user, db)
+
+
+@router.get("/{profile_id}/search-strategy", response_model=SearchPlanRead)
+def preview_search_strategy(
+    profile_id: str,
+    mode: SearchMode = SearchMode.STANDARD,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SearchPlanRead:
+    plan = build_search_plan(_owned(profile_id, user, db), mode)
+    return SearchPlanRead.model_validate(plan, from_attributes=True)
 
 
 @router.put("/{profile_id}", response_model=ProfileRead, dependencies=[Depends(require_csrf)])
