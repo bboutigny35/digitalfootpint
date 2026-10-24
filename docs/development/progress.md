@@ -154,13 +154,18 @@ d'autres connecteurs prioritaires exige encore une méthode officielle adaptée.
 - [x] Ajouter la revue utilisateur privée (confirmation, rejet, incertitude,
       correction d'attribution et exclusion d'un homonyme) et sa réutilisation
       strictement limitée au même propriétaire.
+- [x] Ajouter une classification contextuelle lexicale bornée, signaler le nom
+      seul et les homonymes possibles, dédupliquer les preuves par empreinte de
+      contenu et n'autoriser le nom approximatif qu'avec corroboration.
 - [ ] Étendre prudemment la détection des doublons, contradictions et
-      rapprochements approximatifs contrôlés avec leurs explications et tests.
+      entités nommées au-delà de ces heuristiques contrôlées, avec leurs
+      explications et tests.
 
 La phase F est **en cours** : l'analyse exacte des pages racines est raccordée à
 la transaction de crawl et la revue humaine privée est exposée avec réutilisation
-traçable. Les rapprochements approximatifs et l'analyse contextuelle étendue ne
-sont pas encore implémentés.
+traçable. Les rapprochements approximatifs et l'analyse contextuelle sont
+implémentés dans une première forme bornée ; une analyse d'entités plus riche
+reste à réaliser.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

@@ -14,7 +14,7 @@ un téléphone brut n'est pas recopié dans la table de correspondance.
 Les copies d'une même source peuvent être reconnues par `source_hash` et ne
 doivent pas être comptées comme preuves indépendantes.
 
-L'analyseur `exact-identity-evidence-v1` traite actuellement la page racine
+L'analyseur `identity-evidence-v2` traite actuellement la page racine
 d'un résultat de connecteur après son crawl. Il recherche uniquement des valeurs
 exactes normalisées (nom complet, variantes, pseudonymes, e-mail public,
 localisation, profession et employeurs), ainsi que le domaine ou l'URL déjà
@@ -35,11 +35,23 @@ employeur incompatibles.
 preuves. La méthode courante est versionnée
 `identity-attribution-signals-v1`.
 
-Cette première version ne fait pas de rapprochement approximatif. Une
-correspondance sur le nom seul reste donc faible et aucune absence de signal
-n'est transformée automatiquement en faux positif. Les exclusions explicites du
-profil sont conservées comme contradiction générique, sans recopier leur valeur
-dans l'explication.
+Le rapprochement approximatif est limité au nom, sur un texte et un nombre de
+termes bornés, avec un seuil explicite. Il est ignoré tant qu'un signal plus
+discriminant (pseudonyme, e-mail public, employeur, domaine ou URL connue) ne le
+corrobore pas. Une correspondance sur le nom seul reste faible, porte les
+indicateurs `name_only` et `possible_homonym`, et aucune absence de signal n'est
+transformée automatiquement en faux positif.
+
+Une classification lexicale bornée signale les contextes d'organisation, de
+lieu ou rue, d'œuvre et de profil personnel. Il s'agit d'indicateurs de risque
+explicables, pas d'une reconnaissance d'entités statistique ni d'une décision
+automatique. Les exclusions explicites du profil sont conservées comme
+contradiction générique, sans recopier leur valeur dans l'explication.
+
+Avant de compter une preuve comme indépendante, l'analyseur recherche une
+preuve antérieure du même propriétaire avec la même empreinte de contenu. La
+copie reste consultable et sa provenance référence la première preuve, mais son
+`evidence_count` vaut zéro afin de ne pas gonfler le nombre de sources.
 
 ## Validation humaine
 

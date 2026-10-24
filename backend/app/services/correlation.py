@@ -1,6 +1,7 @@
 import hashlib
 import re
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 from urllib.parse import urlsplit
 
 from sqlalchemy import select
@@ -60,6 +61,7 @@ ATTRIBUTION_WEIGHTS: dict[str, float] = {
     "known_domain": 0.25,
     "known_profile_url": 0.45,
     "cross_profile_link": 0.20,
+    "approximate_name": 0.08,
 }
 
 
@@ -83,8 +85,11 @@ def score_attribution(signals: dict[str, bool], contradictions: list[str]) -> Sc
     )
 
 
-ANALYZER_METHOD = "exact-identity-evidence-v1"
+ANALYZER_METHOD = "identity-evidence-v2"
 MAX_EVIDENCE_EXCERPT_CHARS = 500
+MAX_CONTEXT_TEXT_CHARS = 20_000
+MAX_CONTEXT_TOKENS = 2_000
+APPROXIMATE_NAME_THRESHOLD = 0.90
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +98,12 @@ class _Criterion:
     value: str
     signal: str
     match_kind: str = "exact_text"
+
+
+@dataclass(frozen=True, slots=True)
+class _ContextAssessment:
+    page_classification: str
+    risk_flags: tuple[str, ...]
 
 
 def analyze_crawl_evidence(
@@ -134,6 +145,10 @@ def analyze_crawl_evidence(
     url_signals, url_matches = _url_criteria(profile, result.canonical_url, result.domain)
     signals.update(url_signals)
     matches.extend(url_matches)
+    approximate = _controlled_approximate_name(profile, folded_text, signals)
+    if approximate is not None:
+        signals[approximate.signal] = True
+        matches.append(approximate)
     contradictions = (
         ["profile_exclusion"]
         if any(_contains(folded_text, value) for value in profile.exclusions)
@@ -143,6 +158,18 @@ def analyze_crawl_evidence(
         return None
 
     excerpt = _excerpt_around_first_match(text, matches)
+    source_hash = crawl_result.content_hash or hashlib.sha256(
+        crawl_result.final_url.encode()
+    ).hexdigest()
+    duplicate_evidence_id = db.scalar(
+        select(Evidence.id)
+        .where(
+            Evidence.owner_id == scan.owner_id,
+            Evidence.source_hash == source_hash,
+        )
+        .order_by(Evidence.observed_at.asc(), Evidence.id.asc())
+        .limit(1)
+    )
     evidence = Evidence(
         owner_id=scan.owner_id,
         scan_id=scan.id,
@@ -151,12 +178,13 @@ def analyze_crawl_evidence(
         evidence_type="identity_criteria",
         excerpt=excerpt,
         source_url=crawl_result.final_url,
-        source_hash=crawl_result.content_hash
-        or hashlib.sha256(crawl_result.final_url.encode()).hexdigest(),
+        source_hash=source_hash,
         provenance={
             "method": ANALYZER_METHOD,
             "discovery_method": discovered.discovery_method,
             "match_count": len(matches),
+            "duplicate_source": duplicate_evidence_id is not None,
+            "duplicate_of_evidence_id": duplicate_evidence_id,
         },
         observed_at=crawl_result.fetched_at,
     )
@@ -175,6 +203,7 @@ def analyze_crawl_evidence(
         )
 
     attribution = score_attribution(signals, contradictions)
+    context = _assess_context(folded_text, signals)
     correlation = IdentityCorrelation(
         owner_id=scan.owner_id,
         result_id=result.id,
@@ -184,9 +213,11 @@ def analyze_crawl_evidence(
             **attribution.explanation,
             "analyzer_method": ANALYZER_METHOD,
             "attribution_scope": "connector_result_root_only",
+            "page_classification": context.page_classification,
+            "risk_flags": list(context.risk_flags),
         },
         contradictions=contradictions,
-        evidence_count=1,
+        evidence_count=0 if duplicate_evidence_id else 1,
     )
     db.add(correlation)
     db.flush()
@@ -251,6 +282,85 @@ def _contains(folded_text: str, raw_value: str) -> bool:
     return re.search(rf"(?<!\w){re.escape(folded_value)}(?!\w)", folded_text) is not None
 
 
+def _controlled_approximate_name(
+    profile: IdentityProfile,
+    folded_text: str,
+    signals: dict[str, bool],
+) -> _Criterion | None:
+    corroborating = {
+        "exact_pseudonym",
+        "public_email",
+        "employer",
+        "known_domain",
+        "known_profile_url",
+    }
+    if signals.get("exact_name") or not corroborating.intersection(signals):
+        return None
+    tokens = re.findall(r"[\w'-]+", folded_text[:MAX_CONTEXT_TEXT_CHARS])[
+        :MAX_CONTEXT_TOKENS
+    ]
+    names = [
+        f"{profile.first_name} {profile.last_name}".strip(),
+        *(profile.name_variants or []),
+    ]
+    for raw_name in names:
+        target = fold_text(raw_name)
+        target_parts = target.split()
+        if len(target) < 5 or not target_parts:
+            continue
+        width = len(target_parts)
+        for index in range(len(tokens) - width + 1):
+            candidate = " ".join(tokens[index : index + width])
+            if candidate == target:
+                continue
+            if SequenceMatcher(None, target, candidate).ratio() >= APPROXIMATE_NAME_THRESHOLD:
+                return _Criterion(
+                    "name",
+                    raw_name,
+                    "approximate_name",
+                    "controlled_approximate_text",
+                )
+    return None
+
+
+def _assess_context(folded_text: str, signals: dict[str, bool]) -> _ContextAssessment:
+    classifications = {
+        "organization": (
+            "entreprise",
+            "societe",
+            "association",
+            "organization",
+            "company",
+        ),
+        "place_or_street": (
+            "commune",
+            "municipalite",
+            "mairie",
+            "rue ",
+            "avenue ",
+            "street ",
+        ),
+        "creative_work": ("roman", "film", "livre", "oeuvre", "novel", "painting"),
+        "person_profile": ("biographie", "biography", "profil", "profile", "about me"),
+    }
+    scores = {
+        category: sum(folded_text.count(marker) for marker in markers)
+        for category, markers in classifications.items()
+    }
+    page_classification = (
+        max(scores, key=lambda category: scores[category])
+        if any(scores.values())
+        else "unknown"
+    )
+    risk_flags: list[str] = []
+    identity_signals = {key for key, value in signals.items() if value}
+    if identity_signals == {"exact_name"}:
+        risk_flags.extend(["name_only", "possible_homonym"])
+    if page_classification in {"organization", "place_or_street", "creative_work"}:
+        risk_flags.append(f"non_person_context:{page_classification}")
+    return _ContextAssessment(page_classification, tuple(sorted(risk_flags)))
+
+
 def _excerpt_around_first_match(text: str, matches: list[_Criterion]) -> str:
     folded = fold_text(text)
     positions = [folded.find(fold_text(item.value)) for item in matches]
@@ -283,6 +393,8 @@ def _criterion_explanation(criterion: _Criterion) -> str:
         "domain": "Domaine du résultat présent dans le profil",
         "profile_url": "URL canonique déjà connue dans le profil",
     }
+    if criterion.match_kind == "controlled_approximate_text":
+        return "Nom proche détecté avec un autre critère corroborant"
     return labels[criterion.criterion_type]
 
 

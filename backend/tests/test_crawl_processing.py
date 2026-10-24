@@ -168,9 +168,11 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
         assert evidence.result_id == connector_result.id
         assert len(evidence.excerpt) <= 500
         assert evidence.provenance == {
-            "method": "exact-identity-evidence-v1",
+            "method": "identity-evidence-v2",
             "discovery_method": "connector:synthetic",
             "match_count": 3,
+            "duplicate_source": False,
+            "duplicate_of_evidence_id": None,
         }
         matches = list(
             db.scalars(select(EvidenceMatch).where(EvidenceMatch.evidence_id == evidence.id))
@@ -269,6 +271,7 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
             )
         )
         assert later_correlation is not None
+        assert later_correlation.evidence_count == 0
         reused = db.scalar(
             select(UserValidation).where(
                 UserValidation.correlation_id == later_correlation.id
