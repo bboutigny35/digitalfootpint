@@ -1,14 +1,23 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.core.database import Base
-from app.models.entities import DiscoveryJob, IdentityProfile, Scan, User, WebSource
+from app.models.entities import (
+    DiscoveredURL,
+    DiscoveryJob,
+    IdentityProfile,
+    Scan,
+    User,
+    WebSource,
+)
+from app.services.discovery_documents import DiscoveryBatch, DiscoveryCandidate
 from app.services.discovery_queue import (
     claim_next_discovery_job,
     complete_discovery_job,
+    complete_discovery_with_batch,
     enqueue_source_discovery,
     fail_discovery_job,
     schedule_discovery_retry,
@@ -124,4 +133,36 @@ def test_discovery_completion_and_terminal_failure_are_lease_safe(tmp_path: Path
         assert stored is not None
         assert stored.status == "failed"
         assert stored.error_code == "invalid_document"
+    engine.dispose()
+
+
+def test_discovery_batch_is_not_persisted_after_lease_expiry(tmp_path: Path) -> None:
+    engine = create_engine(f"sqlite+pysqlite:///{tmp_path}/discovery-expired.db")
+    Base.metadata.create_all(engine)
+    now = datetime(2026, 1, 1, tzinfo=UTC)
+    with Session(engine) as db:
+        scan = make_scan(db)
+        source = make_source(db, "expired.example", 10)
+        queued = enqueue_source_discovery(db, scan, source)
+        assert claim_next_discovery_job(db, "worker", now) == queued.job.id
+
+        result = complete_discovery_with_batch(
+            db,
+            queued.job.id,
+            DiscoveryBatch(
+                items=(
+                    DiscoveryCandidate(
+                        url="https://expired.example/profile",
+                        kind="page",
+                    ),
+                )
+            ),
+            worker_id="worker",
+            now=now + timedelta(minutes=6),
+        )
+
+        assert result is None
+        assert db.query(DiscoveredURL).count() == 0
+        db.refresh(queued.job)
+        assert queued.job.status == "running"
     engine.dispose()

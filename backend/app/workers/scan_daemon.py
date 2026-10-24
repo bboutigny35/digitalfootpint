@@ -1,4 +1,4 @@
-"""Worker persistant chargé d'acquérir les scans puis les tâches de crawl."""
+"""Worker persistant chargé des scans, découvertes puis tâches de crawl."""
 
 import asyncio
 import json
@@ -9,13 +9,20 @@ from datetime import datetime
 from threading import Event
 
 import httpx
+from sqlalchemy.orm import Session
 
 from app.connectors.configuration import enabled_registry
 from app.connectors.registry import ConnectorRegistry
 from app.connectors.runtime import build_runtime_registry
 from app.core.config import get_settings
 from app.core.database import SessionLocal
-from app.models.entities import ConnectorSecret, CrawlJob, DiscoveredURL, WebSource
+from app.models.entities import (
+    ConnectorSecret,
+    CrawlJob,
+    DiscoveredURL,
+    DiscoveryJob,
+    WebSource,
+)
 from app.security.connector_secrets import ConnectorSecretVault
 from app.security.outbound import (
     OutboundResponseTooLarge,
@@ -28,6 +35,18 @@ from app.services.crawl_queue import (
     claim_next_crawl_job,
     fail_crawl_job,
     schedule_crawl_retry,
+)
+from app.services.discovery_documents import DiscoveryDocumentError
+from app.services.discovery_fetcher import (
+    DiscoveryDocumentFetcher,
+    DiscoveryFetchError,
+    DiscoveryFetchResult,
+)
+from app.services.discovery_queue import (
+    claim_next_discovery_job,
+    complete_discovery_with_batch,
+    fail_discovery_job,
+    schedule_discovery_retry,
 )
 from app.services.web_fetcher import (
     WebFetcher,
@@ -103,6 +122,7 @@ def process_once(
     worker_id: str,
     registry: ConnectorRegistry | None = None,
     crawl_fetcher: WebFetcher | None = None,
+    discovery_fetcher: DiscoveryDocumentFetcher | None = None,
 ) -> bool:
     with SessionLocal() as db:
         enqueue_due_schedules(db)
@@ -121,7 +141,142 @@ def process_once(
                 schedule_retry(db, scan_id)
                 print(json.dumps({"event": "scan.retry_or_failed", "scan_id": scan_id}))
             return True
+    if process_discovery_once(worker_id, discovery_fetcher):
+        return True
     return process_crawl_once(worker_id, crawl_fetcher)
+
+
+async def _fetch_discovery_source(source: WebSource) -> DiscoveryFetchResult:
+    async with httpx.AsyncClient() as client:
+        fetcher = DiscoveryDocumentFetcher(
+            SafeHttpClient(client),
+            domain_gate=persistent_domain_gate(
+                source.rate_limit_per_minute,
+                should_stop=stop_requested.is_set,
+            ),
+        )
+        return await fetcher.fetch(source)
+
+
+def process_discovery_once(
+    worker_id: str,
+    fetcher: DiscoveryDocumentFetcher | None = None,
+) -> bool:
+    with SessionLocal() as db:
+        job_id = claim_next_discovery_job(db, worker_id)
+        if job_id is None:
+            return False
+        try:
+            job = db.get(DiscoveryJob, job_id)
+            if job is None:
+                raise RuntimeError("Tâche de découverte introuvable après acquisition")
+            source = db.get(WebSource, job.source_id)
+            if source is None:
+                raise RuntimeError("Source de découverte introuvable après acquisition")
+            source_snapshot = WebSource(
+                id=source.id,
+                domain=source.domain,
+                base_url=source.base_url,
+                category=source.category,
+                access_method=source.access_method,
+                state=source.state,
+                priority=source.priority,
+                cache_ttl_seconds=source.cache_ttl_seconds,
+                rate_limit_per_minute=source.rate_limit_per_minute,
+                restrictions=source.restrictions,
+            )
+            # Le quota persistant utilise une autre session : libérer la
+            # transaction de lecture avant tout accès réseau évite un verrou SQLite.
+            db.rollback()
+            if fetcher is None:
+                fetched = asyncio.run(_fetch_discovery_source(source_snapshot))
+            else:
+                fetched = asyncio.run(fetcher.fetch(source_snapshot))
+            enqueued = complete_discovery_with_batch(
+                db,
+                job_id,
+                fetched.batch,
+                worker_id=worker_id,
+            )
+            if enqueued is None:
+                print(json.dumps({"event": "discovery.lease_lost", "discovery_job_id": job_id}))
+            else:
+                print(
+                    json.dumps(
+                        {
+                            "event": "discovery.completed",
+                            "discovery_job_id": job_id,
+                            "documents": fetched.fetched_document_count,
+                            "candidates": enqueued.parsed_count,
+                            "created": enqueued.created_count,
+                        }
+                    )
+                )
+        except asyncio.CancelledError:
+            db.rollback()
+            schedule_discovery_retry(db, job_id, worker_id=worker_id, error_code="worker_shutdown")
+            print(
+                json.dumps({"event": "discovery.requeued_for_shutdown", "discovery_job_id": job_id})
+            )
+        except DiscoveryFetchError as exc:
+            db.rollback()
+            if exc.code in {"rate_limited", "remote_server_error"}:
+                schedule_discovery_retry(
+                    db,
+                    job_id,
+                    worker_id=worker_id,
+                    error_code=exc.code,
+                    retry_after_seconds=exc.retry_after_seconds,
+                )
+                event = "discovery.retry_scheduled"
+            else:
+                fail_discovery_job(db, job_id, worker_id=worker_id, error_code=exc.code)
+                event = "discovery.failed"
+            print(json.dumps({"event": event, "discovery_job_id": job_id, "error_code": exc.code}))
+        except httpx.TransportError:
+            db.rollback()
+            _retry_discovery(db, job_id, worker_id, "network_error")
+        except DiscoveryDocumentError:
+            db.rollback()
+            _fail_discovery(db, job_id, worker_id, "invalid_document")
+        except (OutboundResponseTooLarge, OutboundResponseTypeRejected, UnsafeOutboundUrl) as exc:
+            db.rollback()
+            error_code = {
+                OutboundResponseTooLarge: "response_too_large",
+                OutboundResponseTypeRejected: "mime_type_rejected",
+                UnsafeOutboundUrl: "unsafe_destination",
+            }[type(exc)]
+            _fail_discovery(db, job_id, worker_id, error_code)
+        except Exception:
+            db.rollback()
+            _retry_discovery(db, job_id, worker_id, "discovery_error")
+        return True
+
+
+def _retry_discovery(db: Session, job_id: str, worker_id: str, error_code: str) -> None:
+    schedule_discovery_retry(db, job_id, worker_id=worker_id, error_code=error_code)
+    print(
+        json.dumps(
+            {
+                "event": "discovery.retry_scheduled",
+                "discovery_job_id": job_id,
+                "error_code": error_code,
+            }
+        )
+    )
+
+
+def _fail_discovery(db: Session, job_id: str, worker_id: str, error_code: str) -> None:
+    fail_discovery_job(db, job_id, worker_id=worker_id, error_code=error_code)
+    print(
+        json.dumps(
+            {
+                "event": "discovery.failed",
+                "discovery_job_id": job_id,
+                "error_code": error_code,
+            }
+        )
+    )
 
 
 async def _fetch_crawl_target(url: str, requests_per_minute: int) -> WebFetchResult:

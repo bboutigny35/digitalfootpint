@@ -10,6 +10,11 @@ from sqlalchemy import and_, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.models.entities import DiscoveryJob, Scan, WebSource
+from app.services.discovery_documents import (
+    DiscoveryBatch,
+    DiscoveryEnqueueResult,
+    enqueue_discovery_batch,
+)
 
 MAX_ATTEMPTS = 3
 LEASE_DURATION = timedelta(minutes=5)
@@ -17,7 +22,7 @@ MAX_RETRY_AFTER_SECONDS = 86400
 
 
 @dataclass(frozen=True, slots=True)
-class DiscoveryEnqueueResult:
+class DiscoveryJobEnqueueResult:
     job: DiscoveryJob
     created: bool
 
@@ -26,7 +31,7 @@ def enqueue_source_discovery(
     db: Session,
     scan: Scan,
     source: WebSource,
-) -> DiscoveryEnqueueResult:
+) -> DiscoveryJobEnqueueResult:
     if source.state != "active":
         raise ValueError("Source Web inactive")
     if source.access_method not in {"sitemap", "feed"}:
@@ -38,7 +43,7 @@ def enqueue_source_discovery(
         )
     )
     if existing is not None:
-        return DiscoveryEnqueueResult(existing, False)
+        return DiscoveryJobEnqueueResult(existing, False)
     job = DiscoveryJob(
         owner_id=scan.owner_id,
         scan_id=scan.id,
@@ -48,7 +53,7 @@ def enqueue_source_discovery(
     db.add(job)
     db.commit()
     db.refresh(job)
-    return DiscoveryEnqueueResult(job, True)
+    return DiscoveryJobEnqueueResult(job, True)
 
 
 def claim_next_discovery_job(
@@ -156,6 +161,39 @@ def complete_discovery_job(
     job.lease_expires_at = None
     job.error_code = None
     db.commit()
+
+
+def complete_discovery_with_batch(
+    db: Session,
+    job_id: str,
+    batch: DiscoveryBatch,
+    *,
+    worker_id: str,
+    now: datetime | None = None,
+) -> DiscoveryEnqueueResult | None:
+    completed_at = now or datetime.now(UTC)
+    job = db.get(DiscoveryJob, job_id)
+    if job is None or not _owns_valid_lease(job, worker_id, completed_at):
+        return None
+    scan = db.get(Scan, job.scan_id)
+    source = db.get(WebSource, job.source_id)
+    if scan is None or source is None:
+        raise RuntimeError("État de découverte incomplet")
+    result = enqueue_discovery_batch(
+        db,
+        scan,
+        source,
+        batch,
+        now=completed_at,
+        commit=False,
+    )
+    job.status = "completed"
+    job.finished_at = completed_at
+    job.lease_owner = None
+    job.lease_expires_at = None
+    job.error_code = None
+    db.commit()
+    return result
 
 
 def fail_discovery_job(

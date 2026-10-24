@@ -18,15 +18,21 @@ from app.models.entities import (
     CrawlJob,
     CrawlResult,
     CrawlStatistics,
+    DiscoveredURL,
+    DiscoveryJob,
     IdentityProfile,
     Result,
     Scan,
     ScanStatus,
     User,
+    WebSource,
 )
 from app.security.outbound import OutboundResponseTypeRejected
 from app.security.passwords import hash_password
 from app.services.crawl_queue import enqueue_discovered_url
+from app.services.discovery_documents import DiscoveryBatch, DiscoveryCandidate
+from app.services.discovery_fetcher import DiscoveryFetchError, DiscoveryFetchResult
+from app.services.discovery_queue import enqueue_source_discovery
 from app.services.web_fetcher import WebFetchError, WebFetchResult
 from app.workers import scan_daemon
 
@@ -160,6 +166,48 @@ def _completed_scan_with_crawl(db: Session) -> tuple[Scan, str]:
     return scan, queued.crawl_job.id
 
 
+def _completed_scan_with_discovery(db: Session) -> tuple[Scan, str]:
+    scan = _queued_scan(db)
+    scan.status = ScanStatus.COMPLETED
+    source = WebSource(
+        domain="example.test",
+        base_url="https://example.test/sitemap.xml",
+        category="public",
+        access_method="sitemap",
+        state="active",
+        priority=10,
+    )
+    db.add(source)
+    db.commit()
+    queued = enqueue_source_discovery(db, scan, source)
+    return scan, queued.job.id
+
+
+class _SuccessfulDiscoveryFetcher:
+    async def fetch(self, _source: WebSource) -> DiscoveryFetchResult:
+        return DiscoveryFetchResult(
+            batch=DiscoveryBatch(
+                items=(
+                    DiscoveryCandidate(
+                        url="https://example.test/profile",
+                        kind="page",
+                    ),
+                )
+            ),
+            fetched_document_count=1,
+        )
+
+
+class _RetryingDiscoveryFetcher:
+    async def fetch(self, _source: WebSource) -> DiscoveryFetchResult:
+        raise DiscoveryFetchError("rate_limited", retry_after_seconds=60)
+
+
+class _RejectedDiscoveryFetcher:
+    async def fetch(self, _source: WebSource) -> DiscoveryFetchResult:
+        raise DiscoveryFetchError("source_redirect_outside_domain")
+
+
 def test_process_once_runs_crawl_after_scan_queue(tmp_path: Path, monkeypatch, capsys) -> None:
     engine = create_engine(f"sqlite:///{tmp_path / 'crawl-worker.db'}")
     Base.metadata.create_all(engine)
@@ -179,6 +227,64 @@ def test_process_once_runs_crawl_after_scan_queue(tmp_path: Path, monkeypatch, c
     output = capsys.readouterr().out
     assert "crawl.completed" in output
     assert "example.test" not in output
+    engine.dispose()
+
+
+def test_process_once_runs_discovery_before_crawl(tmp_path: Path, monkeypatch, capsys) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'discovery-worker.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine, expire_on_commit=False) as db:
+        scan, job_id = _completed_scan_with_discovery(db)
+    monkeypatch.setattr(scan_daemon, "SessionLocal", lambda: Session(engine))
+
+    assert scan_daemon.process_once(
+        "discovery-worker",
+        discovery_fetcher=_SuccessfulDiscoveryFetcher(),  # type: ignore[arg-type]
+    )
+
+    with Session(engine) as db:
+        job = db.get(DiscoveryJob, job_id)
+        discovered = db.scalar(select(DiscoveredURL).where(DiscoveredURL.scan_id == scan.id))
+        crawl_job = db.scalar(select(CrawlJob).where(CrawlJob.scan_id == scan.id))
+        assert job is not None and job.status == "completed"
+        assert discovered is not None and discovered.discovery_method == "sitemap"
+        assert crawl_job is not None and crawl_job.status == "queued"
+    output = capsys.readouterr().out
+    assert "discovery.completed" in output
+    assert "example.test" not in output
+    engine.dispose()
+
+
+def test_discovery_worker_distinguishes_retryable_and_terminal_errors(
+    tmp_path: Path, monkeypatch
+) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'discovery-errors.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine, expire_on_commit=False) as db:
+        _scan, job_id = _completed_scan_with_discovery(db)
+    monkeypatch.setattr(scan_daemon, "SessionLocal", lambda: Session(engine))
+
+    assert scan_daemon.process_discovery_once(
+        "discovery-worker",
+        _RetryingDiscoveryFetcher(),  # type: ignore[arg-type]
+    )
+    with Session(engine) as db:
+        job = db.get(DiscoveryJob, job_id)
+        assert job is not None
+        assert job.status == "queued"
+        assert job.error_code == "retry_scheduled"
+        job.next_attempt_at = None
+        db.commit()
+
+    assert scan_daemon.process_discovery_once(
+        "discovery-worker",
+        _RejectedDiscoveryFetcher(),  # type: ignore[arg-type]
+    )
+    with Session(engine) as db:
+        job = db.get(DiscoveryJob, job_id)
+        assert job is not None
+        assert job.status == "failed"
+        assert job.error_code == "source_redirect_outside_domain"
     engine.dispose()
 
 

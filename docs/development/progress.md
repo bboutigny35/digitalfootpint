@@ -100,13 +100,17 @@ en environnement réel restent des opérations séparées, non exécutées ici.
       récursivement les index de sitemaps avec une profondeur bornée.
 - [x] Ajouter la migration `0016` et une file de découverte dédupliquée par
       campagne/source, avec priorité, baux et trois tentatives persistantes.
+- [x] Raccorder le worker à cette file avant le crawl, avec téléchargement hors
+      transaction, finalisation atomique protégée par le bail, reprise des erreurs
+      temporaires et journaux sans URL ni contenu.
 - [ ] Planifier l'exécution des sources actives et persister leur politique de
       reprise sans lancer de téléchargement dans la requête HTTP d'administration.
 - [ ] Raccorder les résultats autorisés des connecteurs existants et évaluer un
       connecteur Common Crawl désactivable.
 
-La phase D reste **en cours** : parseurs, téléchargement et file persistante sont
-hermétiques, mais le worker ne consomme pas encore les tâches de découverte.
+La phase D reste **en cours** : parseurs, téléchargement, file persistante et
+consommation par le worker sont hermétiques. La sélection et la création
+automatiques des tâches par campagne ainsi que les autres entrées restent à faire.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

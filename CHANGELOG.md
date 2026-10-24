@@ -25,6 +25,8 @@
   MIME/taille bornés et parcours d'index limité à deux niveaux et 20 documents.
 - Migration `0016` et file de découverte par campagne/source avec acquisition
   atomique, priorité, baux, reprise bornée et protection contre les workers périmés.
+- Consommation des tâches de découverte par le worker avant le crawl, avec
+  finalisation atomique, erreurs temporaires ou définitives et journaux minimisés.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

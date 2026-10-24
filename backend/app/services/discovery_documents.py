@@ -93,6 +93,7 @@ def enqueue_discovery_batch(
     batch: DiscoveryBatch,
     *,
     now: datetime | None = None,
+    commit: bool = True,
 ) -> DiscoveryEnqueueResult:
     if source.state != "active":
         raise DiscoveryDocumentError("Source Web inactive")
@@ -113,7 +114,10 @@ def enqueue_discovery_batch(
         created_count += int(enqueued.created)
     source.last_checked_at = now or datetime.now(UTC)
     source.last_error_code = None
-    db.commit()
+    if commit:
+        db.commit()
+    else:
+        db.flush()
     return DiscoveryEnqueueResult(
         parsed_count=len(batch.items),
         created_count=created_count,

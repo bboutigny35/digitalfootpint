@@ -129,7 +129,7 @@ les nouveaux liens et les statistiques sont validés dans une seule transaction,
 uniquement si le worker possède encore le bail de la tâche.
 
 Le processus `digitalfootprint-scan-worker` conserve la priorité historique des
-scans puis traite une tâche de crawl lorsqu'aucun scan n'est disponible. Les
+scans, traite ensuite une tâche de découverte, puis une tâche de crawl. Les
 limitations, erreurs serveur et indisponibilités de robots sont reprises avec le
 backoff persistant ; les refus robots, destinations interdites, types MIME et
 tailles invalides échouent immédiatement. Un arrêt gracieux remet la tâche en
@@ -161,6 +161,11 @@ campagne, son propriétaire et une source. La contrainte unique campagne/source
 évite les doublons. L'acquisition est atomique, respecte la priorité de la source
 et utilise un bail de cinq minutes avec trois tentatives et backoff borné. Une
 écriture provenant d'un worker dont le bail est expiré ou repris est ignorée.
+Le téléchargement s'effectue hors transaction de lecture, puis la création des
+URL et tâches de crawl et la clôture du job sont validées atomiquement. Les
+limitations et erreurs serveur sont reprises ; document invalide, redirection
+hors domaine, destination interdite, taille ou type MIME refusé sont définitifs.
+Les journaux exposent seulement l'identifiant, les compteurs et un code contrôlé.
 
 ## Compatibilité et indexation
 
