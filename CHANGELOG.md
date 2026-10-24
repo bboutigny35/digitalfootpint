@@ -23,6 +23,8 @@
   strictes, filtrage au domaine source et mise en file avec provenance.
 - Téléchargement anti-SSRF des documents de découverte avec quota persistant,
   MIME/taille bornés et parcours d'index limité à deux niveaux et 20 documents.
+- Migration `0016` et file de découverte par campagne/source avec acquisition
+  atomique, priorité, baux, reprise bornée et protection contre les workers périmés.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

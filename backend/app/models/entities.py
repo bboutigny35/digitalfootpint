@@ -204,6 +204,29 @@ class WebSource(Base):
     )
 
 
+class DiscoveryJob(Base):
+    __tablename__ = "discovery_jobs"
+    __table_args__ = (
+        UniqueConstraint("scan_id", "source_id", name="uq_discovery_job_scan_source"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id", ondelete="CASCADE"), index=True)
+    source_id: Mapped[str] = mapped_column(
+        ForeignKey("web_sources.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[str] = mapped_column(String(30), default="queued", index=True)
+    priority: Mapped[int] = mapped_column(Integer, default=100, index=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    lease_owner: Mapped[str | None] = mapped_column(String(100), index=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    error_code: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class DiscoveredURL(Base):
     __tablename__ = "discovered_urls"
     __table_args__ = (UniqueConstraint("scan_id", "url_hash", name="uq_discovered_url_scan_hash"),)

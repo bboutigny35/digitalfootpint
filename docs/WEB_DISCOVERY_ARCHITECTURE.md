@@ -62,6 +62,8 @@ Les migrations seront additives et réparties pour faciliter les retours arrièr
 3. `0014` : `DiscoveredURL`, `CrawlJob`, `CrawlResult` et statistiques de campagne,
    avec déduplication par empreinte d'URL canonique et baux persistants ;
 4. `0015` : `Evidence`, correspondances, corrélations et validations utilisateur.
+5. `0016` : tâches de découverte par campagne/source, avec priorité, tentatives
+   bornées et baux persistants.
 
 `Scan` reste la campagne existante et `Result` le résultat public compatible. Les
 nouvelles entités les référencent ; elles ne les dupliquent pas.
@@ -153,6 +155,12 @@ Le parcours d'un index est limité à deux niveaux, 20 documents et 1 000 pages 
 total. Les contenus XML acceptés sont limités à 512 Kio et aux types MIME XML,
 RSS ou Atom. Le service reste isolé de la planification : l'activation d'une
 source dans l'API d'administration ne déclenche pas elle-même de téléchargement.
+
+Chaque exécution planifiée est représentée par un `DiscoveryJob` lié à une
+campagne, son propriétaire et une source. La contrainte unique campagne/source
+évite les doublons. L'acquisition est atomique, respecte la priorité de la source
+et utilise un bail de cinq minutes avec trois tentatives et backoff borné. Une
+écriture provenant d'un worker dont le bail est expiré ou repris est ignorée.
 
 ## Compatibilité et indexation
 
