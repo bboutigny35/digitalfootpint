@@ -29,6 +29,10 @@
   finalisation atomique, erreurs temporaires ou définitives et journaux minimisés.
 - Sélection automatique, déterministe et plafonnée des sources sitemap/feed
   actives lors de la finalisation des campagnes manuelles ou récurrentes.
+- Alimentation du crawl par les seuls connecteurs qui l'autorisent explicitement,
+  avec nouvelle validation des URL et refus sans échec du résultat public.
+- Évaluation documentée de Common Crawl et report motivé de son intégration en
+  raison de l'inadéquation à la recherche d'identité et des contraintes CDX/WARC.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

@@ -8,6 +8,7 @@ from app.connectors.base import IdentitySnapshot
 from app.connectors.registry import ConnectorRegistry
 from app.models.entities import IdentityProfile, Result, Scan, ScanStatus
 from app.services.correlation import score_signals
+from app.services.crawl_queue import enqueue_discovered_url
 from app.services.discovery_queue import plan_active_source_discovery
 from app.services.normalization import canonicalize_url
 from app.services.notifications import create_new_mention_notification
@@ -91,6 +92,19 @@ class ScanRunner:
                             score_explanation=score.explanation,
                         )
                     )
+                    if connector.metadata.crawl_results:
+                        try:
+                            enqueue_discovered_url(
+                                db,
+                                scan,
+                                canonical_url,
+                                discovery_method=f"connector:{connector_id}",
+                                commit=False,
+                            )
+                        except ValueError:
+                            # Le résultat minimisé reste consultable, mais une URL
+                            # non admissible ne devient jamais une autorisation réseau.
+                            pass
                 scan.progress = position / len(scan.connector_ids)
                 db.commit()
             db.refresh(scan)

@@ -16,8 +16,11 @@ minimisation des données et des connecteurs utilisant des API officielles.
 Le worker persistant sait également traiter la file de crawl Web : respect de
 `robots.txt`, quota par domaine, validation SSRF de chaque redirection et limites
 strictes de type et de taille. Seul le texte minimisé est conservé, jamais le
-corps HTML brut. Cette chaîne reste une fonctionnalité de développement et ne
-garantit ni l'exhaustivité ni l'attribution d'une page à une identité.
+corps HTML brut. Les sources sitemap/feed doivent être activées par un
+administrateur ; seuls les connecteurs déclarant explicitement leurs résultats
+explorables alimentent cette file, après une nouvelle validation de chaque URL.
+Cette chaîne reste une fonctionnalité de développement et ne garantit ni
+l'exhaustivité ni l'attribution d'une page à une identité.
 
 L’écran Recherches propose une **Recherche globale** : il lance les connecteurs
 activés, prêts et compatibles avec le profil en une action. Le périmètre reste

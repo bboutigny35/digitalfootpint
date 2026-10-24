@@ -83,6 +83,7 @@ def test_process_once_persists_results_and_completes_scan(tmp_path: Path, monkey
         completed = db.get(Scan, scan.id)
         result = db.scalar(select(Result).where(Result.scan_id == scan.id))
         discovery_job = db.scalar(select(DiscoveryJob).where(DiscoveryJob.scan_id == scan.id))
+        crawl_job = db.scalar(select(CrawlJob).where(CrawlJob.scan_id == scan.id))
         assert completed is not None
         assert completed.status == ScanStatus.COMPLETED
         assert result is not None
@@ -90,6 +91,7 @@ def test_process_once_persists_results_and_completes_scan(tmp_path: Path, monkey
         assert discovery_job is not None
         assert discovery_job.source_id == source.id
         assert discovery_job.status == "queued"
+        assert crawl_job is None
     engine.dispose()
 
 
@@ -106,6 +108,33 @@ class _FailingConnector(Connector):
         raise RuntimeError("synthetic provider failure")
 
 
+class _CrawlableConnector(Connector):
+    metadata = ConnectorMetadata(
+        identifier="crawlable",
+        version="test",
+        capabilities=("public_profiles",),
+        accepted_identifiers=(IdentifierType.PSEUDONYM,),
+        crawl_results=True,
+    )
+
+    async def search(self, identity: IdentitySnapshot) -> list[CandidateResult]:
+        del identity
+        return [
+            CandidateResult(
+                url="https://public.example/profile",
+                title="Public profile",
+                snippet="Synthetic public result",
+                match_type="pseudonym",
+            ),
+            CandidateResult(
+                url="http://127.0.0.1/private",
+                title="Rejected crawl target",
+                snippet="Synthetic local result",
+                match_type="pseudonym",
+            ),
+        ]
+
+
 def test_process_once_requeues_failure_with_generic_error(tmp_path: Path, monkeypatch) -> None:
     engine = create_engine(f"sqlite:///{tmp_path / 'worker-failure.db'}")
     Base.metadata.create_all(engine)
@@ -120,6 +149,33 @@ def test_process_once_requeues_failure_with_generic_error(tmp_path: Path, monkey
         assert retried is not None
         assert retried.status == ScanStatus.QUEUED
         assert retried.error_code == "retry_scheduled"
+    engine.dispose()
+
+
+def test_authorized_connector_results_feed_crawl_without_failing_on_rejected_url(
+    tmp_path: Path, monkeypatch
+) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'connector-crawl.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine, expire_on_commit=False) as db:
+        scan = _queued_scan(db)
+        scan.connector_ids = ["crawlable"]
+        db.commit()
+    monkeypatch.setattr(scan_daemon, "SessionLocal", lambda: Session(engine))
+
+    assert scan_daemon.process_once("test-worker", ConnectorRegistry([_CrawlableConnector()]))
+
+    with Session(engine) as db:
+        completed = db.get(Scan, scan.id)
+        results = list(db.scalars(select(Result).where(Result.scan_id == scan.id)))
+        discovered = list(db.scalars(select(DiscoveredURL).where(DiscoveredURL.scan_id == scan.id)))
+        crawl_jobs = list(db.scalars(select(CrawlJob).where(CrawlJob.scan_id == scan.id)))
+        assert completed is not None and completed.status == ScanStatus.COMPLETED
+        assert len(results) == 2
+        assert len(discovered) == 1
+        assert discovered[0].canonical_url == "https://public.example/profile"
+        assert discovered[0].discovery_method == "connector:crawlable"
+        assert len(crawl_jobs) == 1
     engine.dispose()
 
 

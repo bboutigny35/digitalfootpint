@@ -88,6 +88,7 @@ class BraveSearchConnector(Connector):
         accepted_identifiers=(IdentifierType.NAME, IdentifierType.PSEUDONYM),
         requires_api_key=True,
         rate_limit_per_minute=5,
+        crawl_results=True,
     )
 
     def __init__(

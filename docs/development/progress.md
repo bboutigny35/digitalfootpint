@@ -106,13 +106,16 @@ en environnement réel restent des opérations séparées, non exécutées ici.
 - [x] Planifier automatiquement, à la fin atomique de chaque campagne manuelle ou
       récurrente, au plus 20 sources actives sitemap/feed par ordre déterministe ;
       leur reprise reste persistante et aucun téléchargement n'a lieu dans l'API.
-- [ ] Raccorder les résultats autorisés des connecteurs existants et évaluer un
-      connecteur Common Crawl désactivable.
+- [x] Raccorder au crawl les résultats des seuls connecteurs qui l'autorisent
+      explicitement, avec revalidation de chaque URL et refus par défaut.
+- [x] Évaluer Common Crawl dans `docs/COMMON_CRAWL_EVALUATION.md` et reporter son
+      intégration : l'index d'URL n'est pas un moteur d'identité, son API publique
+      est fortement limitée et une chaîne WARC sûre dépasserait ce périmètre.
 
-La phase D reste **en cours** : parseurs, téléchargement, file persistante,
-sélection automatique et consommation par le worker sont hermétiques. Le
-raccordement des résultats autorisés des connecteurs et l'étude Common Crawl
-restent à faire.
+La phase D est **terminée pour son périmètre d'implémentation** : toutes les
+entrées prévues sont filtrées, bornées, persistantes et couvertes sans accès
+réseau réel. Common Crawl a été évalué mais volontairement non intégré selon les
+critères documentés ; ce report n'est pas présenté comme une fonctionnalité.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

@@ -29,6 +29,7 @@ class GitHubConnector(Connector):
         accepted_identifiers=(IdentifierType.PSEUDONYM,),
         requires_api_key=False,
         rate_limit_per_minute=10,
+        crawl_results=True,
     )
 
     def __init__(

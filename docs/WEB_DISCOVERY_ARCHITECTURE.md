@@ -172,6 +172,19 @@ limitations et erreurs serveur sont reprises ; document invalide, redirection
 hors domaine, destination interdite, taille ou type MIME refusé sont définitifs.
 Les journaux exposent seulement l'identifiant, les compteurs et un code contrôlé.
 
+Les résultats des connecteurs ne sont proposés au crawl que si leurs métadonnées
+déclarent explicitement `crawl_results`. GitHub, GitLab, Brave, SearXNG et Wayback
+activent cette capacité ; le connecteur simulé et tout futur connecteur restent
+refusés par défaut. Chaque URL repasse par les contrôles syntaxiques et réseau de
+la file. Un refus de crawl ne supprime pas le résultat minimisé et ne fait pas
+échouer la campagne.
+
+L'étude Common Crawl est consignée dans `docs/COMMON_CRAWL_EVALUATION.md`. Son
+index public correspond aux captures d'URL connues, subit de fortes limitations
+et nécessiterait une chaîne WARC supplémentaire. Aucun connecteur n'est donc
+activé dans ce périmètre ; une future expérimentation devra être désactivée par
+défaut et limitée aux domaines/sites déjà fournis par l'utilisateur.
+
 ## Compatibilité et indexation
 
 SQLite et PostgreSQL restent supportés par chaque migration. La recherche locale

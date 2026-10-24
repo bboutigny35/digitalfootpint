@@ -18,6 +18,7 @@ class ConnectorMetadata:
     accepted_identifiers: tuple[IdentifierType, ...]
     requires_api_key: bool = False
     rate_limit_per_minute: int | None = None
+    crawl_results: bool = False
 
 
 @dataclass(frozen=True, slots=True)

@@ -112,6 +112,7 @@ class WaybackConnector(Connector):
         accepted_identifiers=(IdentifierType.DOMAIN,),
         requires_api_key=False,
         rate_limit_per_minute=5,
+        crawl_results=True,
     )
 
     def __init__(
