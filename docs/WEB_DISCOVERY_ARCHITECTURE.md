@@ -83,6 +83,24 @@ hors 80/443 et les adresses IP littérales non publiques. Un nom DNS accepté à
 stade devra encore être résolu et validé juste avant connexion : l'inscription en
 file ne constitue jamais une autorisation réseau.
 
+## Ordonnancement du crawl
+
+Le planificateur persistant sélectionne d'abord la priorité numérique la plus
+faible, puis l'ancienneté. L'acquisition atomique place la tâche en `running`,
+incrémente son nombre de tentatives et lui attribue un bail de cinq minutes. Un
+bail expiré peut être repris tant que la limite de trois tentatives n'est pas
+atteinte.
+
+Une erreur récupérable replace la tâche en `queued`. Le délai suit le
+`Retry-After` lorsqu'il est fourni, sinon un recul exponentiel, avec jitter et un
+plafond de 24 heures. Après la troisième tentative, la tâche devient `failed` et
+les statistiques de campagne sont mises à jour. La pause d'une campagne ne
+modifie que ses tâches en attente ; les tâches déjà acquises terminent leur bail.
+
+Ce planificateur ne télécharge lui-même aucune ressource. Le futur fetcher devra
+encore appliquer robots.txt, quotas et validation SSRF après résolution DNS et à
+chaque redirection avant de produire un `CrawlResult`.
+
 ## Compatibilité et indexation
 
 SQLite et PostgreSQL restent supportés par chaque migration. La recherche locale

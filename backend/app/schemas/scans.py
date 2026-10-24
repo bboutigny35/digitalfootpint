@@ -58,6 +58,11 @@ class ResultPageRead(BaseModel):
     pages: int
 
 
+class CrawlQueueStatusRead(BaseModel):
+    scan_id: str
+    counts: dict[str, int]
+
+
 class ScanComparisonItemRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

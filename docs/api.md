@@ -28,6 +28,10 @@ sans indicatif reste numérique afin de ne pas inventer un pays.
 - `POST /auth/users` : création d'un compte par un administrateur.
 - `GET|POST /profiles`, `GET|PUT|DELETE /profiles/{id}`.
 - `GET|POST /scans`, `GET /scans/{id}`, `POST /scans/{id}/cancel`.
+- `GET /scans/{id}/crawl` : compte les tâches de crawl par état pour le
+  propriétaire du scan.
+- `POST /scans/{id}/crawl/pause` et `POST /scans/{id}/crawl/resume` : suspendent
+  ou réactivent les tâches en attente ; ces mutations exigent un jeton CSRF.
 - `GET /results` et `PATCH /results/{id}/verification`.
 - `GET /results/search` : recherche paginée avec filtres par texte, connecteur,
   domaine, statut et dates, plus tri contrôlé par date, titre, score ou domaine.
@@ -58,6 +62,8 @@ frontend, jamais dans `localStorage`.
 
 Créer un scan persiste une tâche `queued` destinée au worker ; la requête HTTP
 n'exécute pas le scan. L'API publique ne permet pas d'insérer des résultats.
+De même, les routes de contrôle du crawl ne déclenchent aucun téléchargement et
+ne permettent pas de modifier les tâches d'un autre propriétaire.
 Pour inclure `brave` ou `searxng`, `POST /api/v1/scans` exige
 `external_search_consent: true`. Cette propriété exprime la confirmation explicite
 de l'utilisateur ; l'action est auditée sans enregistrer les termes. Les

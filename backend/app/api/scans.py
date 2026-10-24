@@ -19,6 +19,7 @@ from app.models.entities import (
     VerificationStatus,
 )
 from app.schemas.scans import (
+    CrawlQueueStatusRead,
     ResultPageRead,
     ResultRead,
     ResultVerificationUpdate,
@@ -27,6 +28,7 @@ from app.schemas.scans import (
     ScanCreate,
     ScanRead,
 )
+from app.services.crawl_queue import crawl_queue_counts, set_scan_crawl_paused
 from app.services.scan_comparison import ComparisonCategory, compare_results
 
 router = APIRouter(tags=["recherches"])
@@ -197,6 +199,40 @@ def cancel_scan(
     db.commit()
     db.refresh(scan)
     return scan
+
+
+@router.get("/scans/{scan_id}/crawl", response_model=CrawlQueueStatusRead)
+def get_crawl_queue_status(
+    scan_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> CrawlQueueStatusRead:
+    scan = _owned_scan(scan_id, user, db)
+    return CrawlQueueStatusRead(scan_id=scan.id, counts=crawl_queue_counts(db, scan.id))
+
+
+@router.post(
+    "/scans/{scan_id}/crawl/pause",
+    response_model=CrawlQueueStatusRead,
+    dependencies=[Depends(require_csrf)],
+)
+def pause_crawl_queue(
+    scan_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> CrawlQueueStatusRead:
+    scan = _owned_scan(scan_id, user, db)
+    set_scan_crawl_paused(db, scan.id, True)
+    return CrawlQueueStatusRead(scan_id=scan.id, counts=crawl_queue_counts(db, scan.id))
+
+
+@router.post(
+    "/scans/{scan_id}/crawl/resume",
+    response_model=CrawlQueueStatusRead,
+    dependencies=[Depends(require_csrf)],
+)
+def resume_crawl_queue(
+    scan_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> CrawlQueueStatusRead:
+    scan = _owned_scan(scan_id, user, db)
+    set_scan_crawl_paused(db, scan.id, False)
+    return CrawlQueueStatusRead(scan_id=scan.id, counts=crawl_queue_counts(db, scan.id))
 
 
 @router.get("/results", response_model=list[ResultRead])

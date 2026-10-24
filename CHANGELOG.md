@@ -11,6 +11,8 @@
   registre administratif des sources Web via la migration `0013`.
 - File persistante de découverte et crawl : URL canoniques dédupliquées, tâches à
   baux, résultats minimisés, cache et statistiques via la migration `0014`.
+- Planificateur de crawl persistant avec priorité, acquisition atomique, baux de
+  cinq minutes, trois tentatives, reprise bornée et contrôle privé pause/reprise.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

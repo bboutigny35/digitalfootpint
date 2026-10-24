@@ -68,6 +68,22 @@ La phase B est **terminée pour l'architecture et les fondations persistantes**.
 Les moteurs qui alimenteront ces modèles, leurs API et leurs interfaces relèvent
 des phases C à G et ne sont pas encore déclarés opérationnels.
 
+## Phase C — planificateur et crawler
+
+- [x] Ajouter l'acquisition atomique par priorité avec bail de cinq minutes,
+      reprise des baux expirés et limite de trois tentatives.
+- [x] Respecter un `Retry-After` borné ou appliquer un recul exponentiel avec
+      jitter, puis comptabiliser les échecs définitifs.
+- [x] Exposer au propriétaire l'état agrégé de sa file et les contrôles pause /
+      reprise protégés par CSRF, sans déclencher d'accès réseau.
+- [ ] Implémenter le fetcher HTTP avec robots.txt, quotas par domaine, limites de
+      taille/MIME et validation SSRF à chaque résolution et redirection.
+- [ ] Extraire et persister le contenu minimisé, les liens admissibles et la
+      provenance, puis raccorder le worker aux tâches de crawl.
+
+La phase C reste **en cours** : l'ordonnancement persistant est présent, mais
+aucune tâche de cette nouvelle file ne télécharge encore de page Web.
+
 ## Évolution — recherche SearXNG auto-hébergée
 
 - [x] Connecteur SearXNG local : API JSON via POST, maximum cinq requêtes par

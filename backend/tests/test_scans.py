@@ -23,6 +23,14 @@ def test_scan_lifecycle(authenticated: tuple[TestClient, str]) -> None:
     assert created.json()["connector_ids"] == ["github"]
     scan_id = created.json()["id"]
     assert client.get(f"/api/v1/scans/{scan_id}").status_code == 200
+    crawl_status = client.get(f"/api/v1/scans/{scan_id}/crawl")
+    assert crawl_status.status_code == 200
+    assert crawl_status.json() == {"scan_id": scan_id, "counts": {}}
+    assert client.post(f"/api/v1/scans/{scan_id}/crawl/pause").status_code == 403
+    paused = client.post(f"/api/v1/scans/{scan_id}/crawl/pause", headers={"X-CSRF-Token": csrf})
+    assert paused.status_code == 200
+    resumed = client.post(f"/api/v1/scans/{scan_id}/crawl/resume", headers={"X-CSRF-Token": csrf})
+    assert resumed.status_code == 200
     cancelled = client.post(f"/api/v1/scans/{scan_id}/cancel", headers={"X-CSRF-Token": csrf})
     assert cancelled.status_code == 200
     assert cancelled.json()["status"] == "cancelled"
@@ -53,6 +61,14 @@ def test_resources_are_isolated_between_users(authenticated: tuple[TestClient, s
     member_csrf = member_login.json()["csrf_token"]
     assert client.get(f"/api/v1/profiles/{profile_id}").status_code == 404
     assert client.get(f"/api/v1/scans/{scan['id']}").status_code == 404
+    assert client.get(f"/api/v1/scans/{scan['id']}/crawl").status_code == 404
+    assert (
+        client.post(
+            f"/api/v1/scans/{scan['id']}/crawl/pause",
+            headers={"X-CSRF-Token": member_csrf},
+        ).status_code
+        == 404
+    )
     assert (
         client.get(
             "/api/v1/scans/compare/results",
