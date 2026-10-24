@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.api import admin as admin_api
 from app.core.database import get_db
-from app.models.entities import AuditEvent, User
+from app.models.entities import AuditEvent, PlatformCatalogEntry, User
 
 
 def test_admin_overview_and_audit_do_not_expose_secrets(
@@ -61,7 +61,72 @@ def test_non_admin_cannot_access_administration(
     assert client.get("/api/v1/admin/overview").status_code == 403
     assert client.get("/api/v1/admin/audit-events").status_code == 403
     assert client.get("/api/v1/admin/connector-secrets").status_code == 403
+    assert client.get("/api/v1/admin/platform-catalog").status_code == 403
+    assert client.get("/api/v1/admin/web-sources").status_code == 403
     assert client.post("/api/v1/admin/backups/download").status_code == 403
+
+
+def test_admin_platform_catalog_and_web_sources(
+    authenticated: tuple[TestClient, str],
+) -> None:
+    client, csrf = authenticated
+    override = client.app.dependency_overrides[get_db]
+    with next(override()) as db:
+        db.add(
+            PlatformCatalogEntry(
+                identifier="netflix",
+                display_name="Netflix",
+                category="streaming",
+                verification_method="none",
+                default_status="NOT_VERIFIABLE",
+                priority=200,
+                limitations="Aucun annuaire public de comptes clients.",
+            )
+        )
+        db.commit()
+
+    catalog = client.get("/api/v1/admin/platform-catalog?category=streaming")
+    assert catalog.status_code == 200
+    assert catalog.json()[0]["default_status"] == "NOT_VERIFIABLE"
+    assert catalog.json()[0]["connector_id"] is None
+
+    payload = {
+        "base_url": "https://example.net/public/",
+        "category": "Public feeds",
+        "access_method": "feed",
+        "priority": 40,
+        "cache_ttl_seconds": 3600,
+        "rate_limit_per_minute": 3,
+        "restrictions": [" public only ", "public only"],
+    }
+    assert client.post("/api/v1/admin/web-sources", json=payload).status_code == 403
+    created = client.post(
+        "/api/v1/admin/web-sources",
+        json=payload,
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert created.status_code == 201
+    source = created.json()
+    assert source["domain"] == "example.net"
+    assert source["state"] == "pending"
+    assert source["category"] == "public_feeds"
+    assert source["restrictions"] == ["public only"]
+    assert (
+        client.post(
+            "/api/v1/admin/web-sources",
+            json=payload,
+            headers={"X-CSRF-Token": csrf},
+        ).status_code
+        == 409
+    )
+    updated = client.patch(
+        f"/api/v1/admin/web-sources/{source['id']}",
+        json={"state": "suspended", "priority": 90},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["state"] == "suspended"
+    assert client.get("/api/v1/admin/web-sources").json()[0]["priority"] == 90
 
 
 def test_admin_downloads_ephemeral_backup_without_choosing_path(

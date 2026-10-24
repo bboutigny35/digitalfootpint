@@ -43,7 +43,13 @@ release ni push distant n'est autorisé à ce stade.
 - [x] Valider `0012` en montée, rétrogradation vers `0011` et remontée sur SQLite
       et PostgreSQL 17 UTF-8 éphémères ; suite backend complète, Ruff et mypy
       strict réussis.
-- [ ] Ajouter les modèles et migrations additives `0013` à `0015` après validation
+- [x] Implémenter `0013` avec catalogue de 32 plateformes et registre des sources
+      Web, sans dupliquer l'activation des connecteurs existants.
+- [x] Ajouter les API et vues administratives de consultation du catalogue et
+      d'ajout manuel de sources, créées en état `pending` sans accès réseau.
+- [x] Valider `0013` en montée, rétrogradation vers `0012` et remontée sur SQLite
+      et PostgreSQL 17 UTF-8, avec contrôle des 32 entrées initiales.
+- [ ] Ajouter les migrations additives `0014` et `0015` après validation
       successive de chaque lot sur SQLite et PostgreSQL.
 
 La phase B reste **en cours** : le contrat de stratégie et la trajectoire des

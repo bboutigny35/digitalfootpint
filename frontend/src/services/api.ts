@@ -221,6 +221,38 @@ export interface ConnectorSecretStatus {
   updated_at: string | null
 }
 
+export interface PlatformCatalogEntry {
+  identifier: string
+  display_name: string
+  category: string
+  verification_method: string
+  default_status: string
+  connector_id: string | null
+  priority: number
+  limitations: string | null
+  last_checked_at: string | null
+  last_error_code: string | null
+}
+
+export interface WebSource {
+  id: string
+  domain: string
+  base_url: string
+  category: string
+  access_method: string
+  state: string
+  priority: number
+  cache_ttl_seconds: number
+  rate_limit_per_minute: number
+  restrictions: string[]
+  discovered_url_count: number
+  crawled_page_count: number
+  last_checked_at: string | null
+  last_error_code: string | null
+  created_at: string
+  updated_at: string
+}
+
 interface AuthSession {
   user: AuthUser
   csrf_token: string
@@ -447,6 +479,18 @@ export const adminApi = {
     request<AuditEventPage>(`/admin/audit-events?page=${page}&page_size=50`),
   connectorSecrets: () =>
     request<ConnectorSecretStatus[]>('/admin/connector-secrets'),
+  platformCatalog: () =>
+    request<PlatformCatalogEntry[]>('/admin/platform-catalog'),
+  webSources: () => request<WebSource[]>('/admin/web-sources'),
+  createWebSource: (baseUrl: string, category: string) =>
+    request<WebSource>('/admin/web-sources', {
+      method: 'POST',
+      body: JSON.stringify({
+        base_url: baseUrl,
+        category,
+        access_method: 'manual',
+      }),
+    }),
   setConnectorSecret: (connectorId: string, value: string) =>
     request<ConnectorSecretStatus>(
       `/admin/connector-secrets/${encodeURIComponent(connectorId)}`,

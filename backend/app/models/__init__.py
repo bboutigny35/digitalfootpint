@@ -1,3 +1,21 @@
-from app.models.entities import AuditEvent, AuthSession, IdentityProfile, Result, Scan, User
+from app.models.entities import (
+    AuditEvent,
+    AuthSession,
+    IdentityProfile,
+    PlatformCatalogEntry,
+    Result,
+    Scan,
+    User,
+    WebSource,
+)
 
-__all__ = ["AuditEvent", "AuthSession", "IdentityProfile", "Result", "Scan", "User"]
+__all__ = [
+    "AuditEvent",
+    "AuthSession",
+    "IdentityProfile",
+    "PlatformCatalogEntry",
+    "Result",
+    "Scan",
+    "User",
+    "WebSource",
+]

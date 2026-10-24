@@ -164,6 +164,46 @@ class ConnectorConfiguration(Base):
     )
 
 
+class PlatformCatalogEntry(Base):
+    __tablename__ = "platform_catalog"
+    identifier: Mapped[str] = mapped_column(String(100), primary_key=True)
+    display_name: Mapped[str] = mapped_column(String(120))
+    category: Mapped[str] = mapped_column(String(80), index=True)
+    verification_method: Mapped[str] = mapped_column(String(80))
+    default_status: Mapped[str] = mapped_column(String(40))
+    connector_id: Mapped[str | None] = mapped_column(String(100), index=True)
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    limitations: Mapped[str | None] = mapped_column(Text)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_code: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class WebSource(Base):
+    __tablename__ = "web_sources"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    domain: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    base_url: Mapped[str] = mapped_column(Text)
+    category: Mapped[str] = mapped_column(String(80), index=True)
+    access_method: Mapped[str] = mapped_column(String(80))
+    state: Mapped[str] = mapped_column(String(40), default="pending", index=True)
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    cache_ttl_seconds: Mapped[int] = mapped_column(Integer, default=86400)
+    rate_limit_per_minute: Mapped[int] = mapped_column(Integer, default=5)
+    restrictions: Mapped[list[str]] = mapped_column(JSON, default=list)
+    discovered_url_count: Mapped[int] = mapped_column(Integer, default=0)
+    crawled_page_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_code: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class ReportExport(Base):
     __tablename__ = "report_exports"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)

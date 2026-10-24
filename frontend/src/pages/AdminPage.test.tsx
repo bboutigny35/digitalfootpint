@@ -38,6 +38,23 @@ it('affiche uniquement les métadonnées administratives non sensibles', async (
         },
       ])
     }
+    if (url.endsWith('/admin/platform-catalog')) {
+      return Response.json([
+        {
+          identifier: 'netflix',
+          display_name: 'Netflix',
+          category: 'streaming',
+          verification_method: 'none',
+          default_status: 'NOT_VERIFIABLE',
+          connector_id: null,
+          priority: 200,
+          limitations: 'No public account directory.',
+          last_checked_at: null,
+          last_error_code: null,
+        },
+      ])
+    }
+    if (url.endsWith('/admin/web-sources')) return Response.json([])
     return Response.json({
       items: [
         {

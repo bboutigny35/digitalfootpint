@@ -1,8 +1,10 @@
 import shutil
 import tempfile
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
@@ -19,10 +21,12 @@ from app.models.entities import (
     AuditEvent,
     ConnectorConfiguration,
     ConnectorSecret,
+    PlatformCatalogEntry,
     Scan,
     ScanSchedule,
     ScanStatus,
     User,
+    WebSource,
 )
 from app.schemas.admin import (
     AdminOverviewRead,
@@ -33,6 +37,12 @@ from app.schemas.admin import (
     ConnectorSecretRead,
     ConnectorSecretRotationRead,
     ConnectorSecretWrite,
+)
+from app.schemas.discovery import (
+    PlatformCatalogRead,
+    WebSourceCreate,
+    WebSourceRead,
+    WebSourceUpdate,
 )
 from app.security.connector_secrets import ConnectorSecretVault, SecretVaultError
 
@@ -89,6 +99,103 @@ def admin_overview(
         ),
         backup_command_available=True,
     )
+
+
+@router.get("/platform-catalog", response_model=list[PlatformCatalogRead])
+def list_platform_catalog(
+    category: str | None = Query(default=None, max_length=80),
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> list[PlatformCatalogEntry]:
+    statement = select(PlatformCatalogEntry)
+    if category:
+        statement = statement.where(PlatformCatalogEntry.category == category.strip().casefold())
+    return list(
+        db.scalars(
+            statement.order_by(PlatformCatalogEntry.priority, PlatformCatalogEntry.display_name)
+        )
+    )
+
+
+@router.get("/web-sources", response_model=list[WebSourceRead])
+def list_web_sources(
+    _admin: User = Depends(require_admin), db: Session = Depends(get_db)
+) -> list[WebSource]:
+    return list(db.scalars(select(WebSource).order_by(WebSource.priority, WebSource.domain)))
+
+
+@router.post(
+    "/web-sources",
+    response_model=WebSourceRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_csrf)],
+)
+def create_web_source(
+    payload: WebSourceCreate,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> WebSource:
+    base_url = str(payload.base_url)
+    domain = (urlsplit(base_url).hostname or "").rstrip(".").casefold()
+    if db.scalar(select(WebSource.id).where(WebSource.domain == domain)) is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Une source existe déjà pour ce domaine")
+    source = WebSource(
+        id=str(uuid.uuid4()),
+        domain=domain,
+        base_url=base_url,
+        category=payload.category,
+        access_method=payload.access_method,
+        state="pending",
+        priority=payload.priority,
+        cache_ttl_seconds=payload.cache_ttl_seconds,
+        rate_limit_per_minute=payload.rate_limit_per_minute,
+        restrictions=payload.restrictions,
+    )
+    db.add(source)
+    db.flush()
+    db.add(
+        AuditEvent(
+            actor_id=admin.id,
+            action="web_source.create",
+            resource_type="web_source",
+            resource_id=source.id,
+            details={"status": "pending"},
+        )
+    )
+    db.commit()
+    db.refresh(source)
+    return source
+
+
+@router.patch(
+    "/web-sources/{source_id}",
+    response_model=WebSourceRead,
+    dependencies=[Depends(require_csrf)],
+)
+def update_web_source(
+    source_id: str,
+    payload: WebSourceUpdate,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> WebSource:
+    source = db.get(WebSource, source_id)
+    if source is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Source Web introuvable")
+    changes = payload.model_dump(exclude_none=True)
+    for key, value in changes.items():
+        setattr(source, key, value)
+    db.add(
+        AuditEvent(
+            actor_id=admin.id,
+            action="web_source.update",
+            resource_type="web_source",
+            resource_id=source.id,
+            details={"fields": sorted(changes)},
+        )
+    )
+    db.commit()
+    db.refresh(source)
+    return source
 
 
 @router.get("/audit-events", response_model=AuditEventPageRead)

@@ -13,6 +13,8 @@ import {
   type AuditEventPage,
   type ConnectorStatus,
   type ConnectorSecretStatus,
+  type PlatformCatalogEntry,
+  type WebSource,
 } from '../services/api'
 import { useTranslation } from '../i18n/messages'
 
@@ -22,6 +24,10 @@ export function AdminPage() {
   const [connectors, setConnectors] = useState<ConnectorStatus[]>([])
   const [events, setEvents] = useState<AuditEventPage | null>(null)
   const [secrets, setSecrets] = useState<ConnectorSecretStatus[]>([])
+  const [platforms, setPlatforms] = useState<PlatformCatalogEntry[]>([])
+  const [sources, setSources] = useState<WebSource[]>([])
+  const [sourceUrl, setSourceUrl] = useState('')
+  const [sourceCategory, setSourceCategory] = useState('manual')
   const [githubToken, setGithubToken] = useState('')
   const [braveToken, setBraveToken] = useState('')
   const [busy, setBusy] = useState(false)
@@ -29,22 +35,47 @@ export function AdminPage() {
 
   const load = useCallback(async () => {
     try {
-      const [nextOverview, nextConnectors, nextEvents, nextSecrets] =
-        await Promise.all([
-          adminApi.overview(),
-          osintApi.connectors(),
-          adminApi.auditEvents(),
-          adminApi.connectorSecrets(),
-        ])
+      const [
+        nextOverview,
+        nextConnectors,
+        nextEvents,
+        nextSecrets,
+        nextPlatforms,
+        nextSources,
+      ] = await Promise.all([
+        adminApi.overview(),
+        osintApi.connectors(),
+        adminApi.auditEvents(),
+        adminApi.connectorSecrets(),
+        adminApi.platformCatalog(),
+        adminApi.webSources(),
+      ])
       setOverview(nextOverview)
       setConnectors(nextConnectors)
       setEvents(nextEvents)
       setSecrets(nextSecrets)
+      setPlatforms(nextPlatforms)
+      setSources(nextSources)
       setError(null)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t('adminLoadFailed'))
     }
   }, [t])
+
+  async function createSource(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      await adminApi.createWebSource(sourceUrl, sourceCategory)
+      setSourceUrl('')
+      await load()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('adminSaveFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function saveGithubToken(event: FormEvent) {
     event.preventDefault()
@@ -349,6 +380,75 @@ export function AdminPage() {
             </code>
           </section>
         </div>
+        <section className="panel mt-6 overflow-x-auto">
+          <h2 className="section-title">{t('adminPlatformCatalog')}</h2>
+          <p className="section-copy">{t('adminPlatformCatalogNotice')}</p>
+          <table className="mt-4">
+            <thead>
+              <tr>
+                <th>{t('adminPlatform')}</th>
+                <th>{t('adminMethod')}</th>
+                <th>{t('adminStatus')}</th>
+                <th>{t('adminConnector')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {platforms.map((platform) => (
+                <tr key={platform.identifier}>
+                  <td>{platform.display_name}</td>
+                  <td>{platform.verification_method}</td>
+                  <td>{platform.default_status}</td>
+                  <td>{platform.connector_id ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+        <section className="panel mt-6">
+          <h2 className="section-title">{t('adminWebSources')}</h2>
+          <p className="section-copy">{t('adminWebSourcesNotice')}</p>
+          <form
+            className="mt-4 grid gap-4 md:grid-cols-[2fr_1fr_auto]"
+            onSubmit={(event) => void createSource(event)}
+          >
+            <label className="field-label">
+              {t('adminSourceUrl')}
+              <input
+                type="url"
+                required
+                value={sourceUrl}
+                onChange={(event) => setSourceUrl(event.target.value)}
+              />
+            </label>
+            <label className="field-label">
+              {t('adminSourceCategory')}
+              <input
+                required
+                value={sourceCategory}
+                onChange={(event) => setSourceCategory(event.target.value)}
+              />
+            </label>
+            <button className="primary-button self-end" disabled={busy}>
+              {t('adminAddSource')}
+            </button>
+          </form>
+          <div className="mt-5 space-y-3">
+            {sources.map((source) => (
+              <article
+                className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+                key={source.id}
+              >
+                <div className="flex flex-wrap justify-between gap-3">
+                  <p className="font-semibold">{source.domain}</p>
+                  <span className="text-sm">{source.state}</span>
+                </div>
+                <p className="mt-2 break-all text-xs text-slate-500">
+                  {source.base_url}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
         <section className="panel mt-6 overflow-x-auto">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">{t('adminAuditLog')}</h2>
