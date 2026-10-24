@@ -119,7 +119,8 @@ def test_persistent_domain_gate_hashes_domain_before_storage(
 ) -> None:
     reservations: list[tuple[str, int]] = []
 
-    async def reserve(identifier: str, rate: int) -> None:
+    async def reserve(identifier: str, rate: int, *, should_stop: object | None = None) -> None:
+        assert should_stop is None
         reservations.append((identifier, rate))
 
     monkeypatch.setattr("app.services.web_fetcher.wait_for_request_slot", reserve)

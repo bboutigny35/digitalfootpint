@@ -40,13 +40,19 @@ class WebFetchResult:
     content: bytes
 
 
-def persistent_domain_gate(requests_per_minute: int = 5) -> DomainGate:
+def persistent_domain_gate(
+    requests_per_minute: int = 5,
+    *,
+    should_stop: Callable[[], bool] | None = None,
+) -> DomainGate:
     if requests_per_minute < 1:
         raise ValueError("La limite par domaine doit être positive")
 
     async def wait(domain: str) -> None:
         domain_key = hashlib.sha256(domain.casefold().encode()).hexdigest()
-        await wait_for_request_slot(f"crawl-domain:{domain_key}", requests_per_minute)
+        await wait_for_request_slot(
+            f"crawl-domain:{domain_key}", requests_per_minute, should_stop=should_stop
+        )
 
     return wait
 

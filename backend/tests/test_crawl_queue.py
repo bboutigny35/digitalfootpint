@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -112,9 +112,20 @@ def test_retry_after_is_bounded_and_final_failure_updates_statistics(tmp_path: P
         )
         for attempt in range(3):
             assert claim_next_crawl_job(db, "worker", now) == queued.crawl_job.id
+            if attempt == 0:
+                schedule_crawl_retry(
+                    db,
+                    queued.crawl_job.id,
+                    worker_id="stale-worker",
+                    error_code="network_error",
+                    now=now,
+                )
+                db.refresh(queued.crawl_job)
+                assert queued.crawl_job.status == "running"
             schedule_crawl_retry(
                 db,
                 queued.crawl_job.id,
+                worker_id="worker",
                 error_code="rate_limited",
                 retry_after_seconds=999999,
                 now=now,
@@ -129,4 +140,30 @@ def test_retry_after_is_bounded_and_final_failure_updates_statistics(tmp_path: P
         assert statistics is not None
         assert statistics.failed_count == 1
         assert statistics.queued_count == 0
+    engine.dispose()
+
+
+def test_expired_final_lease_is_failed_and_counted(tmp_path: Path) -> None:
+    engine = create_engine(f"sqlite+pysqlite:///{tmp_path}/expired.db")
+    Base.metadata.create_all(engine)
+    now = datetime(2026, 1, 1, tzinfo=UTC)
+    with Session(engine) as db:
+        scan = make_scan(db)
+        queued = enqueue_discovered_url(
+            db, scan, "https://example.com/expired", discovery_method="manual"
+        )
+        job = queued.crawl_job
+        job.status = "running"
+        job.attempt_count = 3
+        job.lease_owner = "lost-worker"
+        job.lease_expires_at = now - timedelta(seconds=1)
+        db.commit()
+
+        assert claim_next_crawl_job(db, "new-worker", now) is None
+        db.refresh(job)
+        assert job.status == "failed"
+        assert job.error_code == "worker_interrupted"
+        statistics = db.get(CrawlStatistics, scan.id)
+        assert statistics is not None
+        assert (statistics.queued_count, statistics.failed_count) == (0, 1)
     engine.dispose()

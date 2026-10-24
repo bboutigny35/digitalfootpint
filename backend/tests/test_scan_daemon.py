@@ -14,8 +14,20 @@ from app.connectors.base import (
 from app.connectors.mock import MockConnector
 from app.connectors.registry import ConnectorRegistry
 from app.core.database import Base
-from app.models.entities import IdentityProfile, Result, Scan, ScanStatus, User
+from app.models.entities import (
+    CrawlJob,
+    CrawlResult,
+    CrawlStatistics,
+    IdentityProfile,
+    Result,
+    Scan,
+    ScanStatus,
+    User,
+)
+from app.security.outbound import OutboundResponseTypeRejected
 from app.security.passwords import hash_password
+from app.services.crawl_queue import enqueue_discovered_url
+from app.services.web_fetcher import WebFetchError, WebFetchResult
 from app.workers import scan_daemon
 
 
@@ -110,4 +122,107 @@ def test_process_once_requeues_scan_on_graceful_shutdown(tmp_path: Path, monkeyp
         assert retried is not None
         assert retried.status == ScanStatus.QUEUED
         assert retried.error_code == "retry_scheduled"
+    engine.dispose()
+
+
+class _SuccessfulFetcher:
+    async def fetch(self, url: str) -> WebFetchResult:
+        return WebFetchResult(
+            final_url=url,
+            http_status=200,
+            mime_type="text/html",
+            content=b"<html><body>Public profile</body></html>",
+        )
+
+
+class _RetryingFetcher:
+    async def fetch(self, _url: str) -> WebFetchResult:
+        raise WebFetchError("rate_limited", retry_after_seconds=60)
+
+
+class _RejectedFetcher:
+    async def fetch(self, _url: str) -> WebFetchResult:
+        raise OutboundResponseTypeRejected("synthetic rejection")
+
+
+class _CancelledFetcher:
+    async def fetch(self, _url: str) -> WebFetchResult:
+        raise asyncio.CancelledError("synthetic shutdown")
+
+
+def _completed_scan_with_crawl(db: Session) -> tuple[Scan, str]:
+    scan = _queued_scan(db)
+    scan.status = ScanStatus.COMPLETED
+    db.commit()
+    queued = enqueue_discovered_url(
+        db, scan, "https://example.test/profile", discovery_method="manual"
+    )
+    return scan, queued.crawl_job.id
+
+
+def test_process_once_runs_crawl_after_scan_queue(tmp_path: Path, monkeypatch, capsys) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'crawl-worker.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine, expire_on_commit=False) as db:
+        scan, job_id = _completed_scan_with_crawl(db)
+    monkeypatch.setattr(scan_daemon, "SessionLocal", lambda: Session(engine))
+
+    assert scan_daemon.process_once("crawl-worker", crawl_fetcher=_SuccessfulFetcher())  # type: ignore[arg-type]
+
+    with Session(engine) as db:
+        job = db.get(CrawlJob, job_id)
+        result = db.scalar(select(CrawlResult).where(CrawlResult.crawl_job_id == job_id))
+        statistics = db.get(CrawlStatistics, scan.id)
+        assert job is not None and job.status == "completed"
+        assert result is not None and result.extracted_text == "Public profile"
+        assert statistics is not None and statistics.fetched_count == 1
+    output = capsys.readouterr().out
+    assert "crawl.completed" in output
+    assert "example.test" not in output
+    engine.dispose()
+
+
+def test_crawl_worker_distinguishes_retryable_and_terminal_errors(
+    tmp_path: Path, monkeypatch
+) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'crawl-errors.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine, expire_on_commit=False) as db:
+        _scan, retry_job_id = _completed_scan_with_crawl(db)
+    monkeypatch.setattr(scan_daemon, "SessionLocal", lambda: Session(engine))
+
+    assert scan_daemon.process_crawl_once("crawl-worker", _RetryingFetcher())  # type: ignore[arg-type]
+    with Session(engine) as db:
+        retry_job = db.get(CrawlJob, retry_job_id)
+        assert retry_job is not None
+        assert retry_job.status == "queued"
+        assert retry_job.error_code == "retry_scheduled"
+        retry_job.next_attempt_at = None
+        db.commit()
+
+    assert scan_daemon.process_crawl_once("crawl-worker", _RejectedFetcher())  # type: ignore[arg-type]
+    with Session(engine) as db:
+        failed_job = db.get(CrawlJob, retry_job_id)
+        statistics = db.get(CrawlStatistics, failed_job.scan_id) if failed_job else None
+        assert failed_job is not None
+        assert failed_job.status == "failed"
+        assert failed_job.error_code == "mime_type_rejected"
+        assert statistics is not None and statistics.failed_count == 1
+    engine.dispose()
+
+
+def test_crawl_worker_requeues_on_graceful_shutdown(tmp_path: Path, monkeypatch) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'crawl-shutdown.db'}")
+    Base.metadata.create_all(engine)
+    with Session(engine, expire_on_commit=False) as db:
+        _scan, job_id = _completed_scan_with_crawl(db)
+    monkeypatch.setattr(scan_daemon, "SessionLocal", lambda: Session(engine))
+
+    assert scan_daemon.process_crawl_once("crawl-worker", _CancelledFetcher())  # type: ignore[arg-type]
+    with Session(engine) as db:
+        job = db.get(CrawlJob, job_id)
+        assert job is not None
+        assert job.status == "queued"
+        assert job.error_code == "retry_scheduled"
+        assert job.lease_owner is None
     engine.dispose()

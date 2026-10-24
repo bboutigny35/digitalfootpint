@@ -99,15 +99,14 @@ modifie que ses tâches en attente ; les tâches déjà acquises terminent leur 
 
 Ce planificateur ne télécharge lui-même aucune ressource. Le fetcher séparé
 applique robots.txt, quotas et validation SSRF après résolution DNS et à chaque
-redirection avant que l'intégration future ne produise un `CrawlResult`.
+redirection avant de produire un `CrawlResult` minimisé.
 
-Le fetcher HTTP est désormais disponible comme service isolé, sans raccordement
-automatique au worker. Il consulte `robots.txt` avant la page, bloque en cas de
-refus et échoue de manière récupérable si ce fichier est temporairement
-indisponible. Chaque requête et redirection repasse par la résolution publique et
-la connexion épinglée du client anti-SSRF. Un quota persistant partagé est réservé
-par empreinte SHA-256 du domaine, sans conserver le nom de domaine dans la table
-de limitation.
+Le fetcher HTTP consulte `robots.txt` avant la page, bloque en cas de refus et
+échoue de manière récupérable si ce fichier est temporairement indisponible.
+Chaque requête et redirection repasse par la résolution publique et la connexion
+épinglée du client anti-SSRF. Un quota persistant partagé est réservé par
+empreinte SHA-256 du domaine, sans conserver le nom de domaine dans la table de
+limitation.
 
 Les réponses robots sont limitées à 256 Kio et les pages à 2 Mio, y compris en
 l'absence de `Content-Length`. Le flux est interrompu dès dépassement. Seuls le
@@ -126,6 +125,15 @@ HTTP(S) du même hôte sont retenus ; la validation syntaxique, la profondeur
 maximale et la déduplication canonique sont ensuite réappliquées. La finalisation,
 les nouveaux liens et les statistiques sont validés dans une seule transaction,
 uniquement si le worker possède encore le bail de la tâche.
+
+Le processus `digitalfootprint-scan-worker` conserve la priorité historique des
+scans puis traite une tâche de crawl lorsqu'aucun scan n'est disponible. Les
+limitations, erreurs serveur et indisponibilités de robots sont reprises avec le
+backoff persistant ; les refus robots, destinations interdites, types MIME et
+tailles invalides échouent immédiatement. Un arrêt gracieux remet la tâche en
+file et un worker ayant perdu son bail ne peut ni la replanifier ni l'écrire. Les
+journaux ne contiennent que l'identifiant de tâche et un code d'erreur contrôlé,
+jamais l'URL ni le contenu téléchargé.
 
 ## Compatibilité et indexation
 

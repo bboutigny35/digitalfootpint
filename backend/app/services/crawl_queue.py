@@ -1,5 +1,6 @@
 import hashlib
 import ipaddress
+from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from secrets import randbelow
@@ -127,7 +128,7 @@ def claim_next_crawl_job(db: Session, worker_id: str, now: datetime | None = Non
         ),
         and_(CrawlJob.status == "running", CrawlJob.lease_expires_at < claimed_at),
     )
-    db.execute(
+    expired_scan_ids = db.scalars(
         update(CrawlJob)
         .where(
             CrawlJob.status == "running",
@@ -141,7 +142,13 @@ def claim_next_crawl_job(db: Session, worker_id: str, now: datetime | None = Non
             lease_owner=None,
             lease_expires_at=None,
         )
-    )
+        .returning(CrawlJob.scan_id)
+    ).all()
+    for scan_id, failed_count in Counter(expired_scan_ids).items():
+        statistics = db.get(CrawlStatistics, scan_id)
+        if statistics is not None:
+            statistics.failed_count += failed_count
+            statistics.queued_count = max(statistics.queued_count - failed_count, 0)
     candidate = (
         select(CrawlJob.id)
         .where(eligible, CrawlJob.attempt_count < MAX_ATTEMPTS)
@@ -171,6 +178,7 @@ def schedule_crawl_retry(
     db: Session,
     job_id: str,
     *,
+    worker_id: str,
     error_code: str,
     retry_after_seconds: int | None = None,
     now: datetime | None = None,
@@ -178,7 +186,7 @@ def schedule_crawl_retry(
 ) -> None:
     failed_at = now or datetime.now(UTC)
     job = db.get(CrawlJob, job_id)
-    if job is None or job.status in {"cancelled", "paused", "completed"}:
+    if job is None or job.status != "running" or job.lease_owner != worker_id:
         return
     job.lease_owner = None
     job.lease_expires_at = None
@@ -196,6 +204,30 @@ def schedule_crawl_retry(
         job.status = "queued"
         job.error_code = "retry_scheduled"
         job.next_attempt_at = failed_at + timedelta(seconds=delay + jitter)
+    db.commit()
+
+
+def fail_crawl_job(
+    db: Session,
+    job_id: str,
+    *,
+    worker_id: str,
+    error_code: str,
+    now: datetime | None = None,
+) -> None:
+    failed_at = now or datetime.now(UTC)
+    job = db.get(CrawlJob, job_id)
+    if job is None or job.status != "running" or job.lease_owner != worker_id:
+        return
+    job.status = "failed"
+    job.error_code = error_code
+    job.finished_at = failed_at
+    job.lease_owner = None
+    job.lease_expires_at = None
+    statistics = db.get(CrawlStatistics, job.scan_id)
+    if statistics is not None:
+        statistics.failed_count += 1
+        statistics.queued_count = max(statistics.queued_count - 1, 0)
     db.commit()
 
 

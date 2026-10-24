@@ -80,12 +80,13 @@ des phases C à G et ne sont pas encore déclarés opérationnels.
       taille/MIME et validation SSRF à chaque résolution et redirection.
 - [x] Extraire et persister atomiquement le contenu minimisé, les liens de même
       hôte admissibles, le cache et la provenance, sans conserver le corps brut.
-- [ ] Raccorder le worker aux tâches de crawl et à leur politique de reprise.
+- [x] Raccorder le worker aux tâches de crawl, aux erreurs permanentes ou
+      récupérables, à la reprise bornée et à l'arrêt gracieux.
 
-La phase C reste **en cours** : le fetcher et le traitement sont testés uniquement
-avec des transports HTTP simulés et ne sont pas encore raccordés au worker.
-Aucune tâche de la nouvelle file ne télécharge donc encore de page Web en
-exploitation.
+La phase C est **terminée pour son périmètre d'implémentation** : planification,
+fetcher sécurisé, minimisation et worker sont couverts sans accès réseau par des
+transports HTTP simulés. Le déploiement sur DEB13-TEST et une validation contrôlée
+en environnement réel restent des opérations séparées, non exécutées ici.
 
 ## Évolution — recherche SearXNG auto-hébergée
 
