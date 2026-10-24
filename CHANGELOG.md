@@ -19,6 +19,8 @@
   hôte et persistance atomique avec contrôle du bail et provenance de la source.
 - Raccordement au worker existant avec priorité aux scans, arrêt gracieux,
   distinction des erreurs permanentes/récupérables et journaux sans URL.
+- Normalisation hermétique des sitemaps, RSS et Atom avec `defusedxml`, limites
+  strictes, filtrage au domaine source et mise en file avec provenance.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

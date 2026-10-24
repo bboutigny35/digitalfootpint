@@ -21,6 +21,7 @@ dependencies = [
   "reportlab==5.0.1",
   "psycopg[binary]==3.2.10",
   "cryptography==50.0.2",
+  "defusedxml==0.7.1",
 ]
 
 [project.scripts]

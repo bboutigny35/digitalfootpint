@@ -121,11 +121,11 @@ def test_admin_platform_catalog_and_web_sources(
     )
     updated = client.patch(
         f"/api/v1/admin/web-sources/{source['id']}",
-        json={"state": "suspended", "priority": 90},
+        json={"state": "active", "priority": 90},
         headers={"X-CSRF-Token": csrf},
     )
     assert updated.status_code == 200
-    assert updated.json()["state"] == "suspended"
+    assert updated.json()["state"] == "active"
     assert client.get("/api/v1/admin/web-sources").json()[0]["priority"] == 90
 
 

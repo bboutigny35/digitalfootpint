@@ -52,7 +52,7 @@ class WebSourceCreate(BaseModel):
 
 
 class WebSourceUpdate(BaseModel):
-    state: Literal["pending", "suspended", "error"] | None = None
+    state: Literal["pending", "active", "suspended", "error"] | None = None
     priority: int | None = Field(default=None, ge=1, le=1000)
     cache_ttl_seconds: int | None = Field(default=None, ge=300, le=2592000)
     rate_limit_per_minute: int | None = Field(default=None, ge=1, le=120)

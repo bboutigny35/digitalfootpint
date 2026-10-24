@@ -135,6 +135,19 @@ file et un worker ayant perdu son bail ne peut ni la replanifier ni l'écrire. L
 journaux ne contiennent que l'identifiant de tâche et un code d'erreur contrôlé,
 jamais l'URL ni le contenu téléchargé.
 
+## Documents de découverte
+
+Les sitemaps, index de sitemaps, flux RSS et Atom partagent un contrat de candidat
+normalisé. Leur analyse est limitée à 512 Kio et utilise `defusedxml` ; DTD et
+entités sont refusées. Un document fournit au plus 1 000 pages ou 50 sitemaps
+imbriqués. Seules les URL HTTP(S) du domaine exact de la source, sans identifiants
+ni port non standard, sont admises.
+
+La mise en file exige une source administrative `active`, conserve son identifiant
+comme provenance et réapplique la canonicalisation et la déduplication du crawler.
+Les index imbriqués sont retournés séparément : leur téléchargement récursif reste
+désactivé jusqu'à l'intégration réseau bornée de la phase D.
+
 ## Compatibilité et indexation
 
 SQLite et PostgreSQL restent supportés par chaque migration. La recherche locale

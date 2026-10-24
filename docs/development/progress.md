@@ -88,6 +88,22 @@ fetcher sécurisé, minimisation et worker sont couverts sans accès réseau par
 transports HTTP simulés. Le déploiement sur DEB13-TEST et une validation contrôlée
 en environnement réel restent des opérations séparées, non exécutées ici.
 
+## Phase D — découverte Web
+
+- [x] Normaliser les candidats issus de sitemaps, index de sitemaps, RSS et Atom
+      dans un contrat commun, avec analyse XML durcie par `defusedxml`.
+- [x] Borner la taille et le nombre d'éléments, refuser DTD/entités, URL hors
+      domaine et sources inactives, puis mettre les pages en file avec provenance.
+- [x] Permettre à l'administrateur d'activer explicitement une source vérifiée ;
+      une source nouvelle reste `pending` par défaut.
+- [ ] Télécharger les documents de découverte via le client anti-SSRF et traiter
+      récursivement les index de sitemaps avec une profondeur bornée.
+- [ ] Raccorder les résultats autorisés des connecteurs existants et évaluer un
+      connecteur Common Crawl désactivable.
+
+La phase D reste **en cours** : les parseurs et la mise en file sont hermétiques,
+mais aucun document sitemap ou flux n'est encore téléchargé automatiquement.
+
 ## Évolution — recherche SearXNG auto-hébergée
 
 - [x] Connecteur SearXNG local : API JSON via POST, maximum cinq requêtes par

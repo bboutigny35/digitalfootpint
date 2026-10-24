@@ -54,7 +54,9 @@ sans indicatif reste numérique afin de ne pas inventer un pays.
 - `GET|POST /admin/web-sources` : consultation et ajout manuel d'une source ; une
   source nouvelle reste `pending` et aucun accès réseau n'est lancé.
 - `PATCH /admin/web-sources/{id}` : état, priorité, cache, fréquence et
-  restrictions. Les mutations exigent administrateur et CSRF.
+  restrictions. L'état `active` autorise la découverte ; une création reste
+  `pending` jusqu'à cette activation explicite. Les mutations exigent
+  administrateur et CSRF.
 
 Les mutations authentifiées exigent le cookie `df_session` et l'en-tête
 `X-CSRF-Token` retourné à la connexion. Le token CSRF doit rester en mémoire côté
