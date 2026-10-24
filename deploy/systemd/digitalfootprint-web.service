@@ -1,0 +1,35 @@
+[Unit]
+Description=DigitalFootprint - API Web
+Documentation=file:/opt/digitalfootprint/docs/installation/debian13.md
+After=network.target postgresql.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=digitalfootprint
+Group=digitalfootprint
+WorkingDirectory=/opt/digitalfootprint/backend
+EnvironmentFile=/etc/digitalfootprint/digitalfootprint.env
+ExecStart=/opt/digitalfootprint/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=digitalfootprint
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/digitalfootprint
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

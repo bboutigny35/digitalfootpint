@@ -1,0 +1,119 @@
+name: digitalfootprint
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/docker/backend.Dockerfile
+    environment: &backend-environment
+      DIGITALFOOTPRINT_ENVIRONMENT: production
+      DIGITALFOOTPRINT_DATABASE_URL: ${COMPOSE_DATABASE_URL:-sqlite:////data/digitalfootprint.db}
+      DIGITALFOOTPRINT_SECRET_KEY: ${DIGITALFOOTPRINT_SECRET_KEY:?Configurez DIGITALFOOTPRINT_SECRET_KEY dans .env}
+      DIGITALFOOTPRINT_ALLOWED_HOSTS: backend,localhost,127.0.0.1
+      DIGITALFOOTPRINT_CORS_ORIGINS: http://127.0.0.1:${DIGITALFOOTPRINT_HTTP_PORT:-8080}
+      DIGITALFOOTPRINT_COOKIE_SECURE: ${DIGITALFOOTPRINT_COOKIE_SECURE:-false}
+      DIGITALFOOTPRINT_SESSION_TTL_HOURS: ${DIGITALFOOTPRINT_SESSION_TTL_HOURS:-12}
+      DIGITALFOOTPRINT_SENSITIVE_RETENTION_INTERVAL_SECONDS: ${DIGITALFOOTPRINT_SENSITIVE_RETENTION_INTERVAL_SECONDS:-86400}
+      DIGITALFOOTPRINT_SCAN_WORKER_POLL_SECONDS: ${DIGITALFOOTPRINT_SCAN_WORKER_POLL_SECONDS:-2}
+      DIGITALFOOTPRINT_GITHUB_API_TOKEN: ${DIGITALFOOTPRINT_GITHUB_API_TOKEN:-}
+      DIGITALFOOTPRINT_SEARXNG_URL: ${DIGITALFOOTPRINT_SEARXNG_URL:-}
+      DIGITALFOOTPRINT_CONNECTOR_SECRET_KEYS: ${DIGITALFOOTPRINT_CONNECTOR_SECRET_KEYS:-}
+      DIGITALFOOTPRINT_CONNECTOR_SECRET_ACTIVE_KEY: ${DIGITALFOOTPRINT_CONNECTOR_SECRET_ACTIVE_KEY:-}
+    volumes:
+      - app-data:/data
+    networks:
+      - application
+      - database
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  retention:
+    build:
+      context: .
+      dockerfile: deploy/docker/backend.Dockerfile
+    command: ["python", "-m", "app.workers.retention_daemon"]
+    environment:
+      <<: *backend-environment
+      DIGITALFOOTPRINT_RUN_MIGRATIONS: "false"
+    volumes:
+      - app-data:/data
+    networks:
+      - database
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/docker/backend.Dockerfile
+    command: ["digitalfootprint-scan-worker"]
+    environment:
+      <<: *backend-environment
+      DIGITALFOOTPRINT_RUN_MIGRATIONS: "false"
+    volumes:
+      - app-data:/data
+    networks:
+      - application
+      - database
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/docker/frontend.Dockerfile
+    ports:
+      - "127.0.0.1:${DIGITALFOOTPRINT_HTTP_PORT:-8080}:8080"
+    networks:
+      - application
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+      - /var/cache/nginx:size=16m,uid=101,gid=101
+      - /var/run:size=1m,uid=101,gid=101
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  app-data:
+
+networks:
+  application:
+  database:
+    internal: true

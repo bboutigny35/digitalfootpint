@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-digitalfootprint}
+      POSTGRES_USER: ${POSTGRES_USER:-digitalfootprint}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configurez POSTGRES_PASSWORD dans .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - database
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    environment:
+      DIGITALFOOTPRINT_DATABASE_URL: ${COMPOSE_POSTGRES_DATABASE_URL:?Configurez COMPOSE_POSTGRES_DATABASE_URL avec un mot de passe URL-encodé}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  retention:
+    environment:
+      DIGITALFOOTPRINT_DATABASE_URL: ${COMPOSE_POSTGRES_DATABASE_URL:?Configurez COMPOSE_POSTGRES_DATABASE_URL avec un mot de passe URL-encodé}
+
+  worker:
+    environment:
+      DIGITALFOOTPRINT_DATABASE_URL: ${COMPOSE_POSTGRES_DATABASE_URL:?Configurez COMPOSE_POSTGRES_DATABASE_URL avec un mot de passe URL-encodé}
+
+volumes:
+  postgres-data:

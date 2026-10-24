@@ -1,0 +1,54 @@
+services:
+  backend:
+    environment:
+      DIGITALFOOTPRINT_SEARXNG_URL: http://searxng:8080/search
+    networks:
+      - search
+
+  worker:
+    environment:
+      DIGITALFOOTPRINT_SEARXNG_URL: http://searxng:8080/search
+    networks:
+      - search
+
+  searxng:
+    image: ghcr.io/searxng/searxng:2026.10.19-81371861f
+    user: "977:977"
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?Configurez SEARXNG_SECRET dans .env}
+      SEARXNG_SETTINGS_PATH: /etc/searxng/settings.yml
+      FORCE_OWNERSHIP: "false"
+    volumes:
+      - ./deploy/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-cache:/var/cache/searxng
+    networks:
+      - search
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 1.0
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+volumes:
+  searxng-cache:
+
+networks:
+  search:
+    driver: bridge

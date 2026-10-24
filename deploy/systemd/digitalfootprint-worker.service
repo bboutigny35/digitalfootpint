@@ -1,0 +1,35 @@
+[Unit]
+Description=DigitalFootprint - worker de scans persistants
+Documentation=file:/opt/digitalfootprint/docs/architecture/connectors.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=digitalfootprint
+Group=digitalfootprint
+WorkingDirectory=/opt/digitalfootprint/backend
+EnvironmentFile=/etc/digitalfootprint/digitalfootprint.env
+ExecStart=/opt/digitalfootprint/backend/.venv/bin/digitalfootprint-scan-worker
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=digitalfootprint
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/digitalfootprint
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

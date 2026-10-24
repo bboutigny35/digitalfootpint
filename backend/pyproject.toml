@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "digitalfootprint"
+version = "0.1.0.dev0"
+description = "Plateforme auto-hébergée de suivi d'empreinte numérique publique"
+requires-python = ">=3.11,<3.14"
+license = {text = "MIT"}
+dependencies = [
+  "fastapi==0.143.0",
+  "uvicorn[standard]==0.37.0",
+  "sqlalchemy==2.1.4",
+  "alembic==1.19.2",
+  "pydantic-settings==2.15.0",
+  "argon2-cffi==25.1.0",
+  "email-validator==2.3.0",
+  "httpx==0.28.1",
+  "openpyxl==3.1.5",
+  "reportlab==5.0.1",
+  "psycopg[binary]==3.2.10",
+  "cryptography==50.0.2",
+]
+
+[project.scripts]
+digitalfootprint-retention = "app.workers.retention:main"
+digitalfootprint-backup = "app.admin.database_archive:backup_main"
+digitalfootprint-restore = "app.admin.database_archive:restore_main"
+digitalfootprint-scan-worker = "app.workers.scan_daemon:main"
+digitalfootprint-docs-pdf = "app.reporting.docs_pdf:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.4.2",
+  "pytest-cov==7.0.0",
+  "httpx2==2.13.1",
+  "ruff==0.14.0",
+  "mypy==1.18.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["B008", "S101"] # Depends() est le patron d'injection documenté par FastAPI.
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105"] # Valeurs factices réservées aux bases éphémères de test.
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]

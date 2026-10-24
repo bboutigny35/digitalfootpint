@@ -1,0 +1,11 @@
+[Unit]
+Description=DigitalFootprint - purge quotidienne des données sensibles expirées
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=30m
+Persistent=true
+Unit=digitalfootprint-retention.service
+
+[Install]
+WantedBy=timers.target

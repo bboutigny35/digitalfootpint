@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite3
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+frontend/playwright-report/
+frontend/test-results/
+reports/

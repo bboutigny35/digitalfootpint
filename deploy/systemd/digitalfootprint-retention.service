@@ -1,0 +1,28 @@
+[Unit]
+Description=DigitalFootprint - purge des données sensibles expirées
+Documentation=file:/opt/digitalfootprint/docs/security/data-retention.md
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=digitalfootprint
+Group=digitalfootprint
+WorkingDirectory=/opt/digitalfootprint/backend
+EnvironmentFile=/etc/digitalfootprint/digitalfootprint.env
+ExecStart=/opt/digitalfootprint/backend/.venv/bin/digitalfootprint-retention
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=digitalfootprint
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/digitalfootprint
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+UMask=0077

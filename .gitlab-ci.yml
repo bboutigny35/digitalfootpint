@@ -1,0 +1,148 @@
+stages:
+  - quality
+  - test
+  - build
+  - integration
+
+default:
+  interruptible: true
+
+backend-quality:
+  stage: quality
+  image: python:3.13-slim-trixie
+  cache:
+    key: backend-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip
+  variables:
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
+  before_script:
+    - cd backend
+    - python -m pip install --disable-pip-version-check -e '.[dev]'
+    - python -m pip install --disable-pip-version-check pip-audit==2.10.1
+  script:
+    - python -m pip check
+    - python -m pip_audit --strict .
+    - python -m ruff check app tests
+    - python -m mypy app
+
+backend-test:
+  stage: test
+  image: python:3.13-slim-trixie
+  variables:
+    DIGITALFOOTPRINT_DATABASE_URL: sqlite:////tmp/digitalfootprint-ci.db
+    DIGITALFOOTPRINT_SECRET_KEY: ci-only-synthetic-secret-at-least-32-characters
+  before_script:
+    - cd backend
+    - python -m pip install --disable-pip-version-check -e '.[dev]'
+  script:
+    - python -m pytest --cov=app --cov-report=term-missing
+    - python -m app.reporting.docs_pdf --docs-root ../docs --output-dir ../generated-docs
+    - python -m alembic upgrade head
+    - python -m alembic downgrade -1
+    - python -m alembic upgrade head
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - generated-docs/*.pdf
+
+postgres-migrations:
+  stage: test
+  image: python:3.13-slim-trixie
+  services:
+    - name: postgres:17-alpine
+      alias: postgres
+  variables:
+    POSTGRES_DB: digitalfootprint
+    POSTGRES_USER: digitalfootprint
+    POSTGRES_PASSWORD: ci-postgres-synthetic-password
+    DIGITALFOOTPRINT_DATABASE_URL: postgresql+psycopg://digitalfootprint:ci-postgres-synthetic-password@postgres:5432/digitalfootprint
+    DIGITALFOOTPRINT_TEST_POSTGRES_BACKUP_URL: postgresql+psycopg://digitalfootprint:ci-postgres-synthetic-password@postgres:5432/digitalfootprint
+    DIGITALFOOTPRINT_SECRET_KEY: ci-only-synthetic-secret-at-least-32-characters
+  before_script:
+    - python -m pip install --disable-pip-version-check -e 'backend[dev]'
+    - cd backend
+  script:
+    - python -m alembic upgrade head
+    - python -m alembic downgrade base
+    - python -m alembic upgrade head
+    - python -m alembic current
+    - python -m pytest -q tests/test_database_archive.py
+
+frontend:
+  stage: test
+  image: node:20-bookworm-slim
+  cache:
+    key:
+      files:
+        - frontend/package-lock.json
+    paths:
+      - .npm/
+  variables:
+    npm_config_cache: $CI_PROJECT_DIR/.npm
+  before_script:
+    - cd frontend
+    - npm ci --legacy-peer-deps --no-audit --no-fund
+  script:
+    - npm run format:check
+    - npm run lint
+    - npm run typecheck
+    - npm test -- --run
+    - npm audit --audit-level=high
+    - npm run build
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - frontend/dist/
+
+e2e:
+  stage: integration
+  image: mcr.microsoft.com/playwright:v1.64.1-noble
+  variables:
+    PYTHON: /tmp/digitalfootprint-e2e/bin/python
+  before_script:
+    - apt-get update
+    - apt-get install --yes --no-install-recommends python3 python3-venv
+    - python3 -m venv /tmp/digitalfootprint-e2e
+    - $PYTHON -m pip install --disable-pip-version-check -e backend
+    - cd frontend
+    - npm ci --legacy-peer-deps --no-audit --no-fund
+  script:
+    - npm run test:e2e
+  artifacts:
+    when: on_failure
+    expire_in: 7 days
+    paths:
+      - frontend/playwright-report/
+      - frontend/test-results/
+
+docker-build:
+  stage: build
+  image: docker:29-cli
+  services:
+    - name: docker:29-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DIGITALFOOTPRINT_SECRET_KEY: ci-only-synthetic-secret-at-least-32-characters
+  script:
+    - docker compose config --quiet
+    - docker build --file deploy/docker/backend.Dockerfile --tag digitalfootprint-backend:ci .
+    - docker build --file deploy/docker/frontend.Dockerfile --tag digitalfootprint-frontend:ci .
+
+compose-integration:
+  stage: integration
+  image: docker:29-cli
+  services:
+    - name: docker:29-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DIGITALFOOTPRINT_SECRET_KEY: ci-only-synthetic-secret-at-least-32-characters
+    DIGITALFOOTPRINT_HTTP_PORT: "18080"
+    COMPOSE_PROJECT_NAME: digitalfootprint-ci
+  script:
+    - docker compose up --build --detach --wait
+    - docker compose ps
+  after_script:
+    - docker compose down --volumes --remove-orphans
