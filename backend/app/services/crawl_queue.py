@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
-from app.models.entities import CrawlJob, CrawlStatistics, DiscoveredURL, Scan
+from app.models.entities import CrawlJob, CrawlStatistics, DiscoveredURL, Scan, WebSource
 from app.services.normalization import canonicalize_url
 
 MAX_DEPTH = 5
@@ -52,6 +52,7 @@ def enqueue_discovered_url(
     discovery_method: str,
     depth: int = 0,
     priority: int = 100,
+    commit: bool = True,
 ) -> EnqueueResult:
     if not 0 <= depth <= MAX_DEPTH:
         raise ValueError("Profondeur de crawl invalide")
@@ -68,6 +69,9 @@ def enqueue_discovered_url(
         job = db.scalar(select(CrawlJob).where(CrawlJob.discovered_url_id == existing.id))
         assert job is not None
         return EnqueueResult(existing, job, False)
+    source = db.get(WebSource, source_id) if source_id is not None else None
+    if source_id is not None and source is None:
+        raise ValueError("Source Web introuvable")
 
     discovered = DiscoveredURL(
         owner_id=scan.owner_id,
@@ -103,9 +107,14 @@ def enqueue_discovered_url(
         db.add(statistics)
     statistics.discovered_count += 1
     statistics.queued_count += 1
-    db.commit()
-    db.refresh(discovered)
-    db.refresh(job)
+    if source is not None:
+        source.discovered_url_count += 1
+    if commit:
+        db.commit()
+        db.refresh(discovered)
+        db.refresh(job)
+    else:
+        db.flush()
     return EnqueueResult(discovered, job, True)
 
 

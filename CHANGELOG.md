@@ -15,6 +15,8 @@
   cinq minutes, trois tentatives, reprise bornée et contrôle privé pause/reprise.
 - Fetcher Web isolé avec robots.txt, quota persistant par domaine pseudonymisé,
   téléchargement borné, filtrage MIME et validation SSRF de chaque redirection.
+- Extraction HTML minimisée sans corps brut, découverte bornée des liens de même
+  hôte et persistance atomique avec contrôle du bail et provenance de la source.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

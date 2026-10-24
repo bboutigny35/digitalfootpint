@@ -78,12 +78,14 @@ des phases C à G et ne sont pas encore déclarés opérationnels.
       reprise protégés par CSRF, sans déclencher d'accès réseau.
 - [x] Implémenter le fetcher HTTP avec robots.txt, quotas par domaine, limites de
       taille/MIME et validation SSRF à chaque résolution et redirection.
-- [ ] Extraire et persister le contenu minimisé, les liens admissibles et la
-      provenance, puis raccorder le worker aux tâches de crawl.
+- [x] Extraire et persister atomiquement le contenu minimisé, les liens de même
+      hôte admissibles, le cache et la provenance, sans conserver le corps brut.
+- [ ] Raccorder le worker aux tâches de crawl et à leur politique de reprise.
 
-La phase C reste **en cours** : le fetcher est testé uniquement avec des
-transports HTTP simulés et n'est pas encore raccordé au worker. Aucune tâche de
-la nouvelle file ne télécharge donc encore de page Web en exploitation.
+La phase C reste **en cours** : le fetcher et le traitement sont testés uniquement
+avec des transports HTTP simulés et ne sont pas encore raccordés au worker.
+Aucune tâche de la nouvelle file ne télécharge donc encore de page Web en
+exploitation.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

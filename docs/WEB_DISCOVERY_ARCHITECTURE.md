@@ -115,6 +115,18 @@ HTML, XHTML et le texte brut sont acceptés pour une page ; le fetcher n'exécut
 aucun script et ne charge aucune sous-ressource. Les réponses `429` transmettent
 un `Retry-After` numérique plafonné à 24 heures au planificateur.
 
+L'étape de traitement retire scripts, styles, modèles, SVG et espaces superflus,
+puis plafonne le texte conservé à 100 000 caractères. Le corps téléchargé n'est
+jamais enregistré : `CrawlResult` contient seulement le texte extrait, la taille,
+l'empreinte SHA-256, le type MIME, l'URL finale et les dates de cache/provenance.
+La durée de cache configurée sur la source est respectée.
+
+Au plus 50 liens d'un document HTML sont proposés à la file. Seuls les liens
+HTTP(S) du même hôte sont retenus ; la validation syntaxique, la profondeur
+maximale et la déduplication canonique sont ensuite réappliquées. La finalisation,
+les nouveaux liens et les statistiques sont validés dans une seule transaction,
+uniquement si le worker possède encore le bail de la tâche.
+
 ## Compatibilité et indexation
 
 SQLite et PostgreSQL restent supportés par chaque migration. La recherche locale
