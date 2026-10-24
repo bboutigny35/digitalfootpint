@@ -1224,6 +1224,13 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                                 type="button"
                                 disabled={isCorrelationBusy}
                                 aria-expanded={isOpen}
+                                aria-controls={`correlation-${result.id}`}
+                                aria-label={formatMessage(
+                                  isOpen
+                                    ? t('workspaceHideEvidenceFor')
+                                    : t('workspaceReviewEvidenceFor'),
+                                  { title: result.title },
+                                )}
                                 onClick={() => void toggleCorrelation(result)}
                               >
                                 {isOpen
@@ -1241,7 +1248,15 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                         {isOpen && correlation && (
                           <tr>
                             <td colSpan={4}>
-                              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                              <div
+                                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                                id={`correlation-${result.id}`}
+                                role="region"
+                                aria-label={formatMessage(
+                                  t('workspaceEvidenceFor'),
+                                  { title: result.title },
+                                )}
+                              >
                                 <div className="grid gap-2 text-sm md:grid-cols-3">
                                   <p>
                                     {t('workspaceRelevanceScore')}:{' '}

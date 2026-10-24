@@ -175,8 +175,11 @@ reste à réaliser.
 - [x] Permettre la correction vers un profil appartenant au compte et l'ajout
       explicitement consenti d'une URL aux profils confirmés, avec traductions
       françaises et anglaises et test de composant hermétique.
+- [x] Réaliser l'audit statique et automatisé de toutes les vues dans
+      `docs/UI_AUDIT.md`, corriger le nom accessible des panneaux de preuves et
+      inventorier explicitement la recette visuelle restante.
 - [ ] Poursuivre l'audit responsive et ergonomique global des autres vues prévu
-      par le prompt maître avant de déclarer la phase G terminée.
+      par une recette visuelle multi-largeurs avant de déclarer la phase G terminée.
 
 La phase G est **en cours** : la revue des preuves est intégrée, mais l'audit
 complet de toutes les pages reste un chantier distinct.

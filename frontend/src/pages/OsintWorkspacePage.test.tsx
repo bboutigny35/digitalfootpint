@@ -463,7 +463,9 @@ it('consulte les preuves et exclut un homonyme avec CSRF', async () => {
   render(<OsintWorkspacePage section="results" />)
 
   await user.click(
-    await screen.findByRole('button', { name: 'Examiner les preuves' }),
+    await screen.findByRole('button', {
+      name: 'Examiner les preuves de Alice Martin',
+    }),
   )
   expect(await screen.findByText('Alice Martin public profile')).toBeVisible()
   expect(screen.getByText('Nom exact présent dans la page')).toBeVisible()
