@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.core.database import Base
@@ -20,6 +20,7 @@ from app.services.discovery_queue import (
     complete_discovery_with_batch,
     enqueue_source_discovery,
     fail_discovery_job,
+    plan_active_source_discovery,
     schedule_discovery_retry,
 )
 
@@ -67,6 +68,41 @@ def test_discovery_jobs_are_deduplicated_and_claimed_by_priority(tmp_path: Path)
         assert duplicate.created is False
         assert duplicate.job.id == first_job.job.id
         assert claim_next_discovery_job(db, "worker", now) == first_job.job.id
+    engine.dispose()
+
+
+def test_active_source_plan_is_deterministic_bounded_and_idempotent(tmp_path: Path) -> None:
+    engine = create_engine(f"sqlite+pysqlite:///{tmp_path}/discovery-plan.db")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        scan = make_scan(db)
+        make_source(db, "later.example", 200)
+        make_source(db, "second.example", 20)
+        make_source(db, "first.example", 10)
+        pending = make_source(db, "pending.example", 1)
+        pending.state = "pending"
+        unsupported = make_source(db, "unsupported.example", 2)
+        unsupported.access_method = "manual"
+        db.commit()
+
+        first_plan = plan_active_source_discovery(db, scan, max_sources=2)
+        second_plan = plan_active_source_discovery(db, scan, max_sources=2)
+
+        assert first_plan.selected_count == 2
+        assert first_plan.created_count == 2
+        assert second_plan.selected_count == 2
+        assert second_plan.created_count == 0
+        jobs = list(
+            db.scalars(
+                select(DiscoveryJob)
+                .where(DiscoveryJob.scan_id == scan.id)
+                .order_by(DiscoveryJob.priority)
+            )
+        )
+        assert [job.source_id for job in jobs] == [
+            db.scalar(select(WebSource.id).where(WebSource.domain == "first.example")),
+            db.scalar(select(WebSource.id).where(WebSource.domain == "second.example")),
+        ]
     engine.dispose()
 
 

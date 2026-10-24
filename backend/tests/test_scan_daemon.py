@@ -60,6 +60,16 @@ def test_process_once_persists_results_and_completes_scan(tmp_path: Path, monkey
     Base.metadata.create_all(engine)
     with Session(engine, expire_on_commit=False) as db:
         scan = _queued_scan(db)
+        source = WebSource(
+            domain="planned.example",
+            base_url="https://planned.example/sitemap.xml",
+            category="public",
+            access_method="sitemap",
+            state="active",
+            priority=10,
+        )
+        db.add(source)
+        db.commit()
     monkeypatch.setattr(scan_daemon, "SessionLocal", lambda: Session(engine))
     monkeypatch.setattr(
         scan_daemon,
@@ -72,10 +82,14 @@ def test_process_once_persists_results_and_completes_scan(tmp_path: Path, monkey
     with Session(engine) as db:
         completed = db.get(Scan, scan.id)
         result = db.scalar(select(Result).where(Result.scan_id == scan.id))
+        discovery_job = db.scalar(select(DiscoveryJob).where(DiscoveryJob.scan_id == scan.id))
         assert completed is not None
         assert completed.status == ScanStatus.COMPLETED
         assert result is not None
         assert result.connector_id == "mock"
+        assert discovery_job is not None
+        assert discovery_job.source_id == source.id
+        assert discovery_job.status == "queued"
     engine.dispose()
 
 

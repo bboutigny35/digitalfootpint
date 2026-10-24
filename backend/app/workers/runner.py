@@ -8,6 +8,7 @@ from app.connectors.base import IdentitySnapshot
 from app.connectors.registry import ConnectorRegistry
 from app.models.entities import IdentityProfile, Result, Scan, ScanStatus
 from app.services.correlation import score_signals
+from app.services.discovery_queue import plan_active_source_discovery
 from app.services.normalization import canonicalize_url
 from app.services.notifications import create_new_mention_notification
 
@@ -96,6 +97,7 @@ class ScanRunner:
             if _is_cancelled(scan):
                 return
             create_new_mention_notification(scan, db)
+            plan_active_source_discovery(db, scan, commit=False)
             scan.status = ScanStatus.COMPLETED
             scan.finished_at = datetime.now(UTC)
             scan.lease_owner = None

@@ -161,6 +161,11 @@ campagne, son propriétaire et une source. La contrainte unique campagne/source
 évite les doublons. L'acquisition est atomique, respecte la priorité de la source
 et utilise un bail de cinq minutes avec trois tentatives et backoff borné. Une
 écriture provenant d'un worker dont le bail est expiré ou repris est ignorée.
+À la fin réussie d'une campagne, au plus 20 sources `active` de type `sitemap` ou
+`feed` sont sélectionnées par priorité, domaine puis identifiant. Les sources
+`pending` et les méthodes non exécutables sont exclues. Les jobs sont créés dans
+la même transaction que le passage du scan à l'état terminé ; cette étape ne
+réalise aucun accès réseau et s'applique aussi aux campagnes récurrentes.
 Le téléchargement s'effectue hors transaction de lecture, puis la création des
 URL et tâches de crawl et la clôture du job sont validées atomiquement. Les
 limitations et erreurs serveur sont reprises ; document invalide, redirection

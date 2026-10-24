@@ -19,6 +19,7 @@ from app.services.discovery_documents import (
 MAX_ATTEMPTS = 3
 LEASE_DURATION = timedelta(minutes=5)
 MAX_RETRY_AFTER_SECONDS = 86400
+MAX_SOURCES_PER_SCAN = 20
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,10 +28,18 @@ class DiscoveryJobEnqueueResult:
     created: bool
 
 
+@dataclass(frozen=True, slots=True)
+class DiscoveryPlanResult:
+    selected_count: int
+    created_count: int
+
+
 def enqueue_source_discovery(
     db: Session,
     scan: Scan,
     source: WebSource,
+    *,
+    commit: bool = True,
 ) -> DiscoveryJobEnqueueResult:
     if source.state != "active":
         raise ValueError("Source Web inactive")
@@ -51,9 +60,44 @@ def enqueue_source_discovery(
         priority=source.priority,
     )
     db.add(job)
-    db.commit()
-    db.refresh(job)
+    if commit:
+        db.commit()
+        db.refresh(job)
+    else:
+        db.flush()
     return DiscoveryJobEnqueueResult(job, True)
+
+
+def plan_active_source_discovery(
+    db: Session,
+    scan: Scan,
+    *,
+    max_sources: int = MAX_SOURCES_PER_SCAN,
+    commit: bool = True,
+) -> DiscoveryPlanResult:
+    bounded_limit = min(max(max_sources, 0), MAX_SOURCES_PER_SCAN)
+    sources = list(
+        db.scalars(
+            select(WebSource)
+            .where(
+                WebSource.state == "active",
+                WebSource.access_method.in_(("sitemap", "feed")),
+            )
+            .order_by(WebSource.priority, WebSource.domain, WebSource.id)
+            .limit(bounded_limit)
+        )
+    )
+    created_count = sum(
+        int(enqueue_source_discovery(db, scan, source, commit=False).created) for source in sources
+    )
+    if commit:
+        db.commit()
+    else:
+        db.flush()
+    return DiscoveryPlanResult(
+        selected_count=len(sources),
+        created_count=created_count,
+    )
 
 
 def claim_next_discovery_job(

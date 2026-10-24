@@ -103,14 +103,16 @@ en environnement réel restent des opérations séparées, non exécutées ici.
 - [x] Raccorder le worker à cette file avant le crawl, avec téléchargement hors
       transaction, finalisation atomique protégée par le bail, reprise des erreurs
       temporaires et journaux sans URL ni contenu.
-- [ ] Planifier l'exécution des sources actives et persister leur politique de
-      reprise sans lancer de téléchargement dans la requête HTTP d'administration.
+- [x] Planifier automatiquement, à la fin atomique de chaque campagne manuelle ou
+      récurrente, au plus 20 sources actives sitemap/feed par ordre déterministe ;
+      leur reprise reste persistante et aucun téléchargement n'a lieu dans l'API.
 - [ ] Raccorder les résultats autorisés des connecteurs existants et évaluer un
       connecteur Common Crawl désactivable.
 
-La phase D reste **en cours** : parseurs, téléchargement, file persistante et
-consommation par le worker sont hermétiques. La sélection et la création
-automatiques des tâches par campagne ainsi que les autres entrées restent à faire.
+La phase D reste **en cours** : parseurs, téléchargement, file persistante,
+sélection automatique et consommation par le worker sont hermétiques. Le
+raccordement des résultats autorisés des connecteurs et l'étude Common Crawl
+restent à faire.
 
 ## Évolution — recherche SearXNG auto-hébergée
 
