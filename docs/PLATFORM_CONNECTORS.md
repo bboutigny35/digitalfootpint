@@ -28,14 +28,31 @@ typé existant et activés par `ConnectorConfiguration`. Le catalogue ne dupliqu
 pas cet état : `connector_id` est nul tant qu'aucune implémentation compatible
 n'existe.
 
+## Contrôles par campagne
+
+La migration `0017` ajoute un résultat normalisé par campagne et plateforme.
+Lorsqu'un connecteur sélectionné a réellement été exécuté, au moins un résultat
+produit `PUBLIC_MATCH` et l'absence de résultat produit `NO_PUBLIC_RESULT`. Ce
+dernier statut décrit uniquement le contrôle réalisé ; il ne prouve pas qu'aucun
+compte n'existe.
+
+Les méthodes `none` et `user_verification` produisent `NOT_VERIFIABLE` sans accès
+réseau. Une plateforme disposant théoriquement d'un profil public mais sans
+connecteur exécuté ne reçoit aucun résultat artificiel. La finalisation est dans
+la même transaction que la fin de la campagne et reste idempotente.
+
+Le propriétaire consulte ces états avec
+`GET /api/v1/scans/{scan_id}/platform-checks`. L'API ne renvoie aucune donnée
+d'une campagne appartenant à un autre utilisateur et inclut une note de méthode.
+
 ## Sources Web
 
 Un administrateur peut enregistrer une URL de base via l'interface ou
 `POST /api/v1/admin/web-sources`. L'entrée est créée dans l'état `pending` et ne
 déclenche aucun accès réseau. Avant toute découverte ou exploration future, son
 URL devra passer par le validateur SSRF et chaque redirection sera revalidée.
-L'API ne permet pas encore de la marquer `active` : cette transition sera ajoutée
-avec le contrôle réseau sécurisé du lot d'exploration.
+L'administrateur peut ensuite la marquer explicitement `active`; cette transition
+ne déclenche elle-même aucun téléchargement.
 
 Le registre conserve catégorie, méthode d'accès, priorité, politique de cache,
 limite de fréquence, restrictions, compteurs minimisés, dernier contrôle et

@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.models.entities import (
     AuditEvent,
     IdentityProfile,
+    PlatformCheckResult,
     Result,
     Scan,
     ScanStatus,
@@ -20,6 +21,8 @@ from app.models.entities import (
 )
 from app.schemas.scans import (
     CrawlQueueStatusRead,
+    PlatformCheckListRead,
+    PlatformCheckRead,
     ResultPageRead,
     ResultRead,
     ResultVerificationUpdate,
@@ -207,6 +210,37 @@ def get_crawl_queue_status(
 ) -> CrawlQueueStatusRead:
     scan = _owned_scan(scan_id, user, db)
     return CrawlQueueStatusRead(scan_id=scan.id, counts=crawl_queue_counts(db, scan.id))
+
+
+@router.get("/scans/{scan_id}/platform-checks", response_model=PlatformCheckListRead)
+def get_platform_checks(
+    scan_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PlatformCheckListRead:
+    scan = _owned_scan(scan_id, user, db)
+    checks = list(
+        db.scalars(
+            select(PlatformCheckResult)
+            .where(
+                PlatformCheckResult.scan_id == scan.id,
+                PlatformCheckResult.owner_id == user.id,
+            )
+            .order_by(
+                PlatformCheckResult.platform_identifier,
+                PlatformCheckResult.id,
+            )
+        )
+    )
+    return PlatformCheckListRead(
+        scan_id=scan.id,
+        items=[PlatformCheckRead.model_validate(item) for item in checks],
+        methodology_note=(
+            "NO_PUBLIC_RESULT et NOT_VERIFIABLE ne prouvent jamais l’absence d’un compte. "
+            "Une entrée n’est créée que pour un connecteur exécuté ou une plateforme sans "
+            "méthode publique fiable."
+        ),
+    )
 
 
 @router.post(

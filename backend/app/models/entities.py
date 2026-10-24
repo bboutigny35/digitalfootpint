@@ -182,6 +182,25 @@ class PlatformCatalogEntry(Base):
     )
 
 
+class PlatformCheckResult(Base):
+    __tablename__ = "platform_check_results"
+    __table_args__ = (
+        UniqueConstraint("scan_id", "platform_identifier", name="uq_platform_check_scan_platform"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id", ondelete="CASCADE"), index=True)
+    platform_identifier: Mapped[str] = mapped_column(
+        ForeignKey("platform_catalog.identifier", ondelete="CASCADE"), index=True
+    )
+    connector_id: Mapped[str | None] = mapped_column(String(100))
+    verification_method: Mapped[str] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(40), index=True)
+    result_count: Mapped[int] = mapped_column(Integer, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(100))
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class WebSource(Base):
     __tablename__ = "web_sources"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)

@@ -26,6 +26,10 @@ def test_scan_lifecycle(authenticated: tuple[TestClient, str]) -> None:
     crawl_status = client.get(f"/api/v1/scans/{scan_id}/crawl")
     assert crawl_status.status_code == 200
     assert crawl_status.json() == {"scan_id": scan_id, "counts": {}}
+    platform_checks = client.get(f"/api/v1/scans/{scan_id}/platform-checks")
+    assert platform_checks.status_code == 200
+    assert platform_checks.json()["items"] == []
+    assert "ne prouvent jamais" in platform_checks.json()["methodology_note"]
     assert client.post(f"/api/v1/scans/{scan_id}/crawl/pause").status_code == 403
     paused = client.post(f"/api/v1/scans/{scan_id}/crawl/pause", headers={"X-CSRF-Token": csrf})
     assert paused.status_code == 200
@@ -62,6 +66,7 @@ def test_resources_are_isolated_between_users(authenticated: tuple[TestClient, s
     assert client.get(f"/api/v1/profiles/{profile_id}").status_code == 404
     assert client.get(f"/api/v1/scans/{scan['id']}").status_code == 404
     assert client.get(f"/api/v1/scans/{scan['id']}/crawl").status_code == 404
+    assert client.get(f"/api/v1/scans/{scan['id']}/platform-checks").status_code == 404
     assert (
         client.post(
             f"/api/v1/scans/{scan['id']}/crawl/pause",

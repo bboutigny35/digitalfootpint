@@ -117,6 +117,25 @@ entrées prévues sont filtrées, bornées, persistantes et couvertes sans accè
 réseau réel. Common Crawl a été évalué mais volontairement non intégré selon les
 critères documentés ; ce report n'est pas présenté comme une fonctionnalité.
 
+## Phase E — plateformes
+
+- [x] Ajouter la migration additive `0017` et les contrôles normalisés par
+      campagne, avec contrainte unique, provenance du connecteur et isolation par
+      propriétaire.
+- [x] Finaliser atomiquement les plateformes réellement contrôlées et celles sans
+      méthode publique, sans fabriquer de résultat pour une plateforme simplement
+      non sélectionnée.
+- [x] Exposer au propriétaire `GET /scans/{id}/platform-checks` avec une note
+      rappelant que les statuts négatifs ne prouvent pas l'absence de compte.
+- [ ] Implémenter les connecteurs prioritaires supplémentaires uniquement lorsque
+      leur méthode publique et autorisée est stable, testable et minimisée.
+- [ ] Intégrer les contrôles de plateformes et leur état de fonctionnement aux
+      vues utilisateur et administrative.
+
+La phase E reste **en cours** : le contrat persistant et le moteur systématique
+sont en place. Les connecteurs prioritaires supplémentaires et leur présentation
+dans l'interface restent à réaliser.
+
 ## Évolution — recherche SearXNG auto-hébergée
 
 - [x] Connecteur SearXNG local : API JSON via POST, maximum cinq requêtes par

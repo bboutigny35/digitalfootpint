@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.entities import ScanStatus, VerificationStatus
+from app.schemas.discovery import PlatformStatus
 from app.services.scan_comparison import ComparisonCategory
 
 
@@ -61,6 +62,24 @@ class ResultPageRead(BaseModel):
 class CrawlQueueStatusRead(BaseModel):
     scan_id: str
     counts: dict[str, int]
+
+
+class PlatformCheckRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    platform_identifier: str
+    connector_id: str | None
+    verification_method: str
+    status: PlatformStatus
+    result_count: int
+    error_code: str | None
+    checked_at: datetime
+
+
+class PlatformCheckListRead(BaseModel):
+    scan_id: str
+    items: list[PlatformCheckRead]
+    methodology_note: str
 
 
 class ScanComparisonItemRead(BaseModel):

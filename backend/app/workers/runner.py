@@ -12,6 +12,7 @@ from app.services.crawl_queue import enqueue_discovered_url
 from app.services.discovery_queue import plan_active_source_discovery
 from app.services.normalization import canonicalize_url
 from app.services.notifications import create_new_mention_notification
+from app.services.platform_checks import finalize_platform_checks
 
 
 def _is_cancelled(scan: Scan) -> bool:
@@ -112,6 +113,7 @@ class ScanRunner:
                 return
             create_new_mention_notification(scan, db)
             plan_active_source_discovery(db, scan, commit=False)
+            finalize_platform_checks(db, scan, commit=False)
             scan.status = ScanStatus.COMPLETED
             scan.finished_at = datetime.now(UTC)
             scan.lease_owner = None

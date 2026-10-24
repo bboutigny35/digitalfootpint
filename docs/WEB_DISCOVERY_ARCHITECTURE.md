@@ -64,6 +64,7 @@ Les migrations seront additives et réparties pour faciliter les retours arrièr
 4. `0015` : `Evidence`, correspondances, corrélations et validations utilisateur.
 5. `0016` : tâches de découverte par campagne/source, avec priorité, tentatives
    bornées et baux persistants.
+6. `0017` : résultats normalisés de vérification des plateformes par campagne.
 
 `Scan` reste la campagne existante et `Result` le résultat public compatible. Les
 nouvelles entités les référencent ; elles ne les dupliquent pas.
