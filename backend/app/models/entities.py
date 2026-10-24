@@ -383,6 +383,12 @@ class UserValidation(Base):
     )
     decision: Mapped[str] = mapped_column(String(30), index=True)
     exclusion_kind: Mapped[str | None] = mapped_column(String(80))
+    attributed_profile_id: Mapped[str | None] = mapped_column(
+        ForeignKey("identity_profiles.id", ondelete="SET NULL"), index=True
+    )
+    reused_from_validation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("user_validations.id", ondelete="SET NULL"), index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow

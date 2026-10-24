@@ -15,6 +15,8 @@ from app.models.entities import (
     IdentityProfile,
     Result,
     Scan,
+    UserValidation,
+    VerificationStatus,
 )
 from app.services.normalization import canonicalize_url, fold_text
 
@@ -187,6 +189,8 @@ def analyze_crawl_evidence(
         evidence_count=1,
     )
     db.add(correlation)
+    db.flush()
+    _reuse_prior_validation(db, result, correlation)
     return correlation
 
 
@@ -280,3 +284,45 @@ def _criterion_explanation(criterion: _Criterion) -> str:
         "profile_url": "URL canonique déjà connue dans le profil",
     }
     return labels[criterion.criterion_type]
+
+
+def _reuse_prior_validation(
+    db: Session, result: Result, correlation: IdentityCorrelation
+) -> UserValidation | None:
+    previous = db.scalar(
+        select(UserValidation)
+        .join(
+            IdentityCorrelation,
+            UserValidation.correlation_id == IdentityCorrelation.id,
+        )
+        .join(Result, IdentityCorrelation.result_id == Result.id)
+        .where(
+            UserValidation.owner_id == result.owner_id,
+            Result.canonical_url == result.canonical_url,
+            IdentityCorrelation.id != correlation.id,
+        )
+        .order_by(UserValidation.updated_at.desc(), UserValidation.id.desc())
+        .limit(1)
+    )
+    if previous is None:
+        return None
+    reused = UserValidation(
+        owner_id=result.owner_id,
+        correlation_id=correlation.id,
+        decision=previous.decision,
+        exclusion_kind=previous.exclusion_kind,
+        attributed_profile_id=previous.attributed_profile_id,
+        reused_from_validation_id=previous.id,
+    )
+    db.add(reused)
+    apply_validation_status(result, previous.decision)
+    return reused
+
+
+def apply_validation_status(result: Result, decision: str) -> None:
+    statuses = {
+        "confirmed": VerificationStatus.CONFIRMED,
+        "rejected": VerificationStatus.FALSE_POSITIVE,
+        "uncertain": VerificationStatus.UNCERTAIN,
+    }
+    result.verification_status = statuses[decision]

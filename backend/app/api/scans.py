@@ -11,16 +11,23 @@ from app.connectors.runtime import build_runtime_registry
 from app.core.database import get_db
 from app.models.entities import (
     AuditEvent,
+    Evidence,
+    EvidenceMatch,
+    IdentityCorrelation,
     IdentityProfile,
     PlatformCheckResult,
     Result,
     Scan,
     ScanStatus,
     User,
+    UserValidation,
     VerificationStatus,
 )
 from app.schemas.scans import (
+    CorrelationRead,
     CrawlQueueStatusRead,
+    EvidenceMatchRead,
+    EvidenceRead,
     PlatformCheckListRead,
     PlatformCheckRead,
     ResultPageRead,
@@ -30,11 +37,80 @@ from app.schemas.scans import (
     ScanComparisonRead,
     ScanCreate,
     ScanRead,
+    ValidationRead,
+    ValidationUpdate,
 )
+from app.services.correlation import apply_validation_status
 from app.services.crawl_queue import crawl_queue_counts, set_scan_crawl_paused
 from app.services.scan_comparison import ComparisonCategory, compare_results
 
 router = APIRouter(tags=["recherches"])
+
+
+def _owned_correlation(result_id: str, user: User, db: Session) -> IdentityCorrelation:
+    correlation = db.scalar(
+        select(IdentityCorrelation)
+        .join(Result, IdentityCorrelation.result_id == Result.id)
+        .where(
+            IdentityCorrelation.result_id == result_id,
+            IdentityCorrelation.owner_id == user.id,
+            Result.owner_id == user.id,
+        )
+    )
+    if correlation is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Corrélation introuvable")
+    return correlation
+
+
+def _correlation_read(correlation: IdentityCorrelation, db: Session) -> CorrelationRead:
+    evidence_items = list(
+        db.scalars(
+            select(Evidence)
+            .where(
+                Evidence.result_id == correlation.result_id,
+                Evidence.owner_id == correlation.owner_id,
+            )
+            .order_by(Evidence.observed_at.desc(), Evidence.id.asc())
+        )
+    )
+    evidence = []
+    for item in evidence_items:
+        matches = list(
+            db.scalars(
+                select(EvidenceMatch)
+                .where(EvidenceMatch.evidence_id == item.id)
+                .order_by(EvidenceMatch.criterion_type.asc(), EvidenceMatch.id.asc())
+            )
+        )
+        evidence.append(
+            EvidenceRead(
+                id=item.id,
+                evidence_type=item.evidence_type,
+                excerpt=item.excerpt,
+                source_url=item.source_url,
+                source_hash=item.source_hash,
+                provenance=item.provenance,
+                observed_at=item.observed_at,
+                matches=[EvidenceMatchRead.model_validate(match) for match in matches],
+            )
+        )
+    validation = db.scalar(
+        select(UserValidation).where(
+            UserValidation.correlation_id == correlation.id,
+            UserValidation.owner_id == correlation.owner_id,
+        )
+    )
+    return CorrelationRead(
+        id=correlation.id,
+        result_id=correlation.result_id,
+        relevance_score=correlation.relevance_score,
+        attribution_score=correlation.attribution_score,
+        explanation=correlation.explanation,
+        contradictions=correlation.contradictions,
+        evidence_count=correlation.evidence_count,
+        evidence=evidence,
+        validation=ValidationRead.model_validate(validation) if validation else None,
+    )
 
 
 def _owned_scan(scan_id: str, user: User, db: Session) -> Scan:
@@ -350,6 +426,92 @@ def search_results(
         page_size=page_size,
         pages=(total + page_size - 1) // page_size,
     )
+
+
+@router.get("/results/{result_id}/correlation", response_model=CorrelationRead)
+def get_result_correlation(
+    result_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> CorrelationRead:
+    return _correlation_read(_owned_correlation(result_id, user, db), db)
+
+
+@router.put(
+    "/results/{result_id}/correlation/validation",
+    response_model=CorrelationRead,
+    dependencies=[Depends(require_csrf)],
+)
+def validate_result_correlation(
+    result_id: str,
+    payload: ValidationUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> CorrelationRead:
+    correlation = _owned_correlation(result_id, user, db)
+    result = db.scalar(
+        select(Result).where(Result.id == result_id, Result.owner_id == user.id)
+    )
+    if result is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Résultat introuvable")
+    if payload.exclusion_kind and payload.decision != "rejected":
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Une exclusion exige le rejet de la correspondance",
+        )
+    if payload.add_confirmed_profile and payload.decision != "confirmed":
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Un profil confirmé exige une correspondance confirmée",
+        )
+    target_profile_id = payload.attributed_profile_id or result.profile_id
+    target_profile = db.scalar(
+        select(IdentityProfile).where(
+            IdentityProfile.id == target_profile_id,
+            IdentityProfile.owner_id == user.id,
+        )
+    )
+    if target_profile is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Profil d'attribution introuvable")
+    validation = db.scalar(
+        select(UserValidation).where(
+            UserValidation.correlation_id == correlation.id,
+            UserValidation.owner_id == user.id,
+        )
+    )
+    if validation is None:
+        validation = UserValidation(owner_id=user.id, correlation_id=correlation.id)
+        db.add(validation)
+    validation.decision = payload.decision
+    validation.exclusion_kind = payload.exclusion_kind
+    validation.attributed_profile_id = target_profile.id
+    validation.reused_from_validation_id = None
+    apply_validation_status(result, payload.decision)
+    if (
+        payload.add_confirmed_profile
+        and result.canonical_url not in target_profile.confirmed_profiles
+    ):
+        target_profile.confirmed_profiles = [
+            *target_profile.confirmed_profiles,
+            result.canonical_url,
+        ]
+    db.add(
+        AuditEvent(
+            actor_id=user.id,
+            action="correlation.validate",
+            resource_type="identity_correlation",
+            resource_id=correlation.id,
+            details={
+                "decision": payload.decision,
+                "exclusion_kind": payload.exclusion_kind,
+                "attribution_corrected": target_profile.id != result.profile_id,
+                "confirmed_profile_added": payload.add_confirmed_profile,
+            },
+        )
+    )
+    db.commit()
+    db.refresh(correlation)
+    return _correlation_read(correlation, db)
 
 
 @router.patch(

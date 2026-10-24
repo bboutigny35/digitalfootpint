@@ -151,15 +151,16 @@ d'autres connecteurs prioritaires exige encore une méthode officielle adaptée.
 - [x] Limiter la première analyse aux correspondances exactes normalisées,
       conserver séparément pertinence et attribution, plafonner le nom seul et
       ne jamais attribuer implicitement une page secondaire.
-- [ ] Ajouter la revue utilisateur privée (confirmation, rejet, incertitude,
+- [x] Ajouter la revue utilisateur privée (confirmation, rejet, incertitude,
       correction d'attribution et exclusion d'un homonyme) et sa réutilisation
       strictement limitée au même propriétaire.
 - [ ] Étendre prudemment la détection des doublons, contradictions et
       rapprochements approximatifs contrôlés avec leurs explications et tests.
 
 La phase F est **en cours** : l'analyse exacte des pages racines est raccordée à
-la transaction de crawl. La revue humaine et les rapprochements contrôlés ne
-sont pas encore exposés.
+la transaction de crawl et la revue humaine privée est exposée avec réutilisation
+traçable. Les rapprochements approximatifs et l'analyse contextuelle étendue ne
+sont pas encore implémentés.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

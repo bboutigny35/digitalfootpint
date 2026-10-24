@@ -47,3 +47,16 @@ dans l'explication.
 décisions prévues sont confirmation, rejet et incertitude ; un rejet peut
 identifier un homonyme ou une autre exclusion. La contrainte inclut toujours
 `owner_id` afin qu'une validation ne soit jamais réutilisée entre utilisateurs.
+
+Le propriétaire consulte les preuves avec
+`GET /api/v1/results/{result_id}/correlation` et enregistre sa décision avec
+`PUT /api/v1/results/{result_id}/correlation/validation`, protégé par CSRF. Il
+peut désigner un autre de ses profils comme attribution correcte et, uniquement
+sur confirmation explicite, ajouter l'URL aux profils confirmés. Les empreintes
+internes des critères ne sont pas renvoyées par l'API.
+
+Lorsqu'une campagne ultérieure retrouve exactement la même URL canonique pour
+le même propriétaire, la dernière validation est recopiée avec une référence à
+sa source et son statut de vérification est appliqué. Cette réutilisation ne
+modifie ni les preuves ni le score heuristique et la requête impose l'égalité de
+`owner_id` ; aucune décision n'est partagée entre comptes.

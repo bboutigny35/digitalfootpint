@@ -19,6 +19,8 @@ from app.models.entities import (
     Result,
     Scan,
     User,
+    UserValidation,
+    VerificationStatus,
     WebSource,
 )
 from app.services.crawl_processing import extract_page, persist_crawl_success
@@ -213,6 +215,71 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
             select(Evidence).where(Evidence.crawl_result_id == secondary.id)
         ) is None
         assert len(list(db.scalars(select(IdentityCorrelation)))) == 1
+
+        db.add(
+            UserValidation(
+                owner_id=scan.owner_id,
+                correlation_id=correlation.id,
+                decision="rejected",
+                exclusion_kind="homonym",
+                attributed_profile_id=scan.profile_id,
+            )
+        )
+        later_scan = Scan(
+            owner_id=scan.owner_id,
+            profile_id=scan.profile_id,
+            connector_ids=["synthetic"],
+        )
+        db.add(later_scan)
+        db.flush()
+        later_result = Result(
+            owner_id=scan.owner_id,
+            profile_id=scan.profile_id,
+            scan_id=later_scan.id,
+            connector_id="synthetic",
+            canonical_url=fetch.final_url,
+            domain="example.test",
+            title="Synthetic public profile",
+            snippet="Synthetic snippet",
+            match_type="profile",
+            relevance_score=0.45,
+            score_explanation={"method": "test"},
+        )
+        db.add(later_result)
+        db.commit()
+        later_queued = enqueue_discovered_url(
+            db,
+            later_scan,
+            fetch.final_url,
+            source_id=source.id,
+            discovery_method="connector:synthetic",
+        )
+        assert claim_next_crawl_job(db, "worker", now) == later_queued.crawl_job.id
+        persist_crawl_success(
+            db,
+            later_queued.crawl_job.id,
+            fetch,
+            extracted,
+            worker_id="worker",
+            now=now,
+        )
+        later_correlation = db.scalar(
+            select(IdentityCorrelation).where(
+                IdentityCorrelation.result_id == later_result.id
+            )
+        )
+        assert later_correlation is not None
+        reused = db.scalar(
+            select(UserValidation).where(
+                UserValidation.correlation_id == later_correlation.id
+            )
+        )
+        assert reused is not None
+        assert reused.decision == "rejected"
+        assert reused.exclusion_kind == "homonym"
+        assert reused.reused_from_validation_id is not None
+        db.refresh(later_result)
+        assert later_result.verification_status == VerificationStatus.FALSE_POSITIVE
     engine.dispose()
 
 

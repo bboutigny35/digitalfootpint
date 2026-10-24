@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -49,6 +50,59 @@ class ResultRead(BaseModel):
 
 class ResultVerificationUpdate(BaseModel):
     verification_status: VerificationStatus
+
+
+class EvidenceMatchRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    criterion_type: str
+    match_kind: str
+    weight: float
+    explanation: str
+
+
+class EvidenceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    evidence_type: str
+    excerpt: str
+    source_url: str
+    source_hash: str
+    provenance: dict[str, object]
+    observed_at: datetime
+    matches: list[EvidenceMatchRead]
+
+
+class ValidationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    decision: Literal["confirmed", "rejected", "uncertain"]
+    exclusion_kind: Literal["homonym"] | None
+    attributed_profile_id: str | None
+    reused_from_validation_id: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class CorrelationRead(BaseModel):
+    id: str
+    result_id: str
+    relevance_score: float
+    attribution_score: float
+    explanation: dict[str, object]
+    contradictions: list[str]
+    evidence_count: int
+    evidence: list[EvidenceRead]
+    validation: ValidationRead | None
+
+
+class ValidationUpdate(BaseModel):
+    decision: Literal["confirmed", "rejected", "uncertain"]
+    exclusion_kind: Literal["homonym"] | None = None
+    attributed_profile_id: str | None = None
+    add_confirmed_profile: bool = False
 
 
 class ResultPageRead(BaseModel):
