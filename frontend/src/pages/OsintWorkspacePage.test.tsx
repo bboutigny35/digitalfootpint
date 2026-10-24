@@ -364,6 +364,130 @@ it('filtre les résultats avec une pagination serveur', async () => {
   )
 })
 
+it('consulte les preuves et exclut un homonyme avec CSRF', async () => {
+  const calls: Array<[string, RequestInit | undefined]> = []
+  const result = {
+    id: 'result-1',
+    profile_id: 'profile-1',
+    scan_id: 'scan-1',
+    connector_id: 'github',
+    canonical_url: 'https://profiles.example/alice',
+    domain: 'profiles.example',
+    title: 'Alice Martin',
+    snippet: 'Public profile',
+    verification_status: 'uncertain',
+    relevance_score: 0.6,
+    discovered_at: '2026-10-24T10:00:00Z',
+  }
+  const correlation = {
+    id: 'correlation-1',
+    result_id: result.id,
+    relevance_score: 0.6,
+    attribution_score: 0.15,
+    explanation: {
+      warning: 'Indice heuristique, pas une probabilité.',
+      page_classification: 'person_profile',
+      risk_flags: ['name_only', 'possible_homonym'],
+    },
+    contradictions: [],
+    evidence_count: 1,
+    evidence: [
+      {
+        id: 'evidence-1',
+        evidence_type: 'identity_criteria',
+        excerpt: 'Alice Martin public profile',
+        source_url: result.canonical_url,
+        source_hash: 'a'.repeat(64),
+        provenance: { method: 'identity-evidence-v2' },
+        observed_at: '2026-10-24T10:00:00Z',
+        matches: [
+          {
+            criterion_type: 'name',
+            match_kind: 'exact_text',
+            weight: 0.15,
+            explanation: 'Nom exact présent dans la page',
+          },
+        ],
+      },
+    ],
+    validation: null,
+  }
+  const fetchMock = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      calls.push([url, init])
+      if (url.endsWith('/profiles')) {
+        return Response.json([
+          {
+            id: 'profile-1',
+            first_name: 'Alice',
+            last_name: 'Martin',
+            pseudonyms: [],
+            created_at: '2026-10-24T10:00:00Z',
+            updated_at: '2026-10-24T10:00:00Z',
+          },
+        ])
+      }
+      if (url.includes('/results/search?')) {
+        return Response.json({
+          items: [result],
+          total: 1,
+          page: 1,
+          page_size: 25,
+          pages: 1,
+        })
+      }
+      if (url.endsWith('/results/result-1/correlation/validation')) {
+        return Response.json({
+          ...correlation,
+          validation: {
+            id: 'validation-1',
+            decision: 'rejected',
+            exclusion_kind: 'homonym',
+            attributed_profile_id: 'profile-1',
+            reused_from_validation_id: null,
+            created_at: '2026-10-24T10:01:00Z',
+            updated_at: '2026-10-24T10:01:00Z',
+          },
+        })
+      }
+      if (url.endsWith('/results/result-1/correlation')) {
+        return Response.json(correlation)
+      }
+      return Response.json([])
+    },
+  )
+  vi.stubGlobal('fetch', fetchMock)
+  setCsrfToken('synthetic-csrf')
+  const user = userEvent.setup()
+  render(<OsintWorkspacePage section="results" />)
+
+  await user.click(
+    await screen.findByRole('button', { name: 'Examiner les preuves' }),
+  )
+  expect(await screen.findByText('Alice Martin public profile')).toBeVisible()
+  expect(screen.getByText('Nom exact présent dans la page')).toBeVisible()
+  expect(screen.getByText(/name_only, possible_homonym/)).toBeVisible()
+  await user.click(
+    screen.getByRole('button', { name: 'Exclure comme homonyme' }),
+  )
+
+  await waitFor(() => {
+    const validationCall = calls.find(([url]) =>
+      url.endsWith('/results/result-1/correlation/validation'),
+    )
+    expect(validationCall).toBeDefined()
+    expect(JSON.parse(String(validationCall?.[1]?.body))).toMatchObject({
+      decision: 'rejected',
+      exclusion_kind: 'homonym',
+      attributed_profile_id: 'profile-1',
+    })
+    expect(new Headers(validationCall?.[1]?.headers).get('X-CSRF-Token')).toBe(
+      'synthetic-csrf',
+    )
+  })
+})
+
 it('modifie tous les critères d’un profil avec CSRF', async () => {
   const calls: Array<[string, RequestInit | undefined]> = []
   const profile = {

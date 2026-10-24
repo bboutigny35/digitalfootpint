@@ -92,6 +92,45 @@ export interface ResultPage {
   pages: number
 }
 
+export interface IdentityCorrelation {
+  id: string
+  result_id: string
+  relevance_score: number
+  attribution_score: number
+  explanation: {
+    warning?: string
+    page_classification?: string
+    risk_flags?: string[]
+    [key: string]: unknown
+  }
+  contradictions: string[]
+  evidence_count: number
+  evidence: Array<{
+    id: string
+    evidence_type: string
+    excerpt: string
+    source_url: string
+    source_hash: string
+    provenance: Record<string, unknown>
+    observed_at: string
+    matches: Array<{
+      criterion_type: string
+      match_kind: string
+      weight: number
+      explanation: string
+    }>
+  }>
+  validation: {
+    id: string
+    decision: 'confirmed' | 'rejected' | 'uncertain'
+    exclusion_kind: 'homonym' | null
+    attributed_profile_id: string | null
+    reused_from_validation_id: string | null
+    created_at: string
+    updated_at: string
+  } | null
+}
+
 export interface ReportExport {
   id: string
   profile_id: string | null
@@ -494,6 +533,23 @@ export const osintApi = {
         method: 'PATCH',
         body: JSON.stringify({ verification_status: verificationStatus }),
       },
+    ),
+  resultCorrelation: (resultId: string) =>
+    request<IdentityCorrelation>(
+      `/results/${encodeURIComponent(resultId)}/correlation`,
+    ),
+  validateCorrelation: (
+    resultId: string,
+    payload: {
+      decision: 'confirmed' | 'rejected' | 'uncertain'
+      exclusion_kind?: 'homonym' | null
+      attributed_profile_id?: string | null
+      add_confirmed_profile?: boolean
+    },
+  ) =>
+    request<IdentityCorrelation>(
+      `/results/${encodeURIComponent(resultId)}/correlation/validation`,
+      { method: 'PUT', body: JSON.stringify(payload) },
     ),
 }
 

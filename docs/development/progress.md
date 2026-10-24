@@ -167,6 +167,20 @@ traçable. Les rapprochements approximatifs et l'analyse contextuelle sont
 implémentés dans une première forme bornée ; une analyse d'entités plus riche
 reste à réaliser.
 
+## Phase G — interface de revue
+
+- [x] Intégrer aux résultats la consultation à la demande des preuves, les deux
+      scores distincts, les indicateurs de prudence et les décisions confirmer,
+      rejeter, incertain ou homonyme.
+- [x] Permettre la correction vers un profil appartenant au compte et l'ajout
+      explicitement consenti d'une URL aux profils confirmés, avec traductions
+      françaises et anglaises et test de composant hermétique.
+- [ ] Poursuivre l'audit responsive et ergonomique global des autres vues prévu
+      par le prompt maître avant de déclarer la phase G terminée.
+
+La phase G est **en cours** : la revue des preuves est intégrée, mais l'audit
+complet de toutes les pages reste un chantier distinct.
+
 ## Évolution — recherche SearXNG auto-hébergée
 
 - [x] Connecteur SearXNG local : API JSON via POST, maximum cinq requêtes par

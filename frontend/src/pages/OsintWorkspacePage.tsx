@@ -7,7 +7,13 @@ import {
   UserPlus,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useState,
+  type FormEvent,
+} from 'react'
 import {
   dashboardApi,
   osintApi,
@@ -16,6 +22,7 @@ import {
   type DashboardSummary,
   type IdentityProfile,
   type IdentityProfileInput,
+  type IdentityCorrelation,
   type OsintResult,
   type PlatformCheckList,
   type PlatformCheckStatus,
@@ -53,6 +60,17 @@ const platformStatusLabelKeys: Record<PlatformCheckStatus, MessageKey> = {
   RATE_LIMITED: 'workspacePlatformRateLimited',
   ACCESS_RESTRICTED: 'workspacePlatformAccessRestricted',
   ERROR: 'workspacePlatformError',
+}
+
+const resultStatusLabelKeys: Record<
+  OsintResult['verification_status'],
+  MessageKey
+> = {
+  uncertain: 'workspaceUncertain',
+  probable: 'workspaceProbable',
+  confirmed: 'workspaceConfirmed',
+  false_positive: 'workspaceFalsePositive',
+  ignored: 'workspaceIgnored',
 }
 
 type ProfileDraft = Record<
@@ -99,6 +117,19 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
   const [resultSort, setResultSort] = useState<
     'date' | 'title' | 'score' | 'domain'
   >('date')
+  const [openCorrelationResultId, setOpenCorrelationResultId] = useState<
+    string | null
+  >(null)
+  const [correlations, setCorrelations] = useState<
+    Record<string, IdentityCorrelation>
+  >({})
+  const [correlationBusy, setCorrelationBusy] = useState<string | null>(null)
+  const [attributionProfiles, setAttributionProfiles] = useState<
+    Record<string, string>
+  >({})
+  const [addConfirmedProfiles, setAddConfirmedProfiles] = useState<
+    Record<string, boolean>
+  >({})
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [pseudonyms, setPseudonyms] = useState('')
@@ -198,6 +229,61 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
     }, 0)
     return () => window.clearTimeout(task)
   }, [section, t])
+
+  async function toggleCorrelation(result: OsintResult) {
+    if (openCorrelationResultId === result.id) {
+      setOpenCorrelationResultId(null)
+      return
+    }
+    setOpenCorrelationResultId(result.id)
+    setAttributionProfiles((current) => ({
+      ...current,
+      [result.id]: current[result.id] || result.profile_id,
+    }))
+    if (correlations[result.id]) return
+    setCorrelationBusy(result.id)
+    try {
+      const correlation = await osintApi.resultCorrelation(result.id)
+      setCorrelations((current) => ({ ...current, [result.id]: correlation }))
+      setError(null)
+    } catch (caught) {
+      setOpenCorrelationResultId(null)
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : t('workspaceEvidenceLoadFailed'),
+      )
+    } finally {
+      setCorrelationBusy(null)
+    }
+  }
+
+  async function reviewCorrelation(
+    result: OsintResult,
+    decision: 'confirmed' | 'rejected' | 'uncertain',
+    exclusionKind: 'homonym' | null = null,
+  ) {
+    setCorrelationBusy(result.id)
+    try {
+      const correlation = await osintApi.validateCorrelation(result.id, {
+        decision,
+        exclusion_kind: exclusionKind,
+        attributed_profile_id:
+          attributionProfiles[result.id] || result.profile_id,
+        add_confirmed_profile:
+          decision === 'confirmed' && Boolean(addConfirmedProfiles[result.id]),
+      })
+      setCorrelations((current) => ({ ...current, [result.id]: correlation }))
+      await loadResultPage(resultPage.page)
+      setError(null)
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : t('workspaceReviewFailed'),
+      )
+    } finally {
+      setCorrelationBusy(null)
+    }
+  }
 
   async function createProfile(event: FormEvent) {
     event.preventDefault()
@@ -1101,60 +1187,218 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {resultPage.items.map((result) => (
-                    <tr key={result.id}>
-                      <td>{result.connector_id}</td>
-                      <td>
-                        <a
-                          className="font-semibold text-teal-700"
-                          href={result.canonical_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {result.title}{' '}
-                          <ExternalLink className="inline" size={14} />
-                        </a>
-                        <p className="mt-1 max-w-xl text-xs text-slate-500">
-                          {result.snippet}
-                        </p>
-                      </td>
-                      <td>{Math.round(result.relevance_score * 100)} %</td>
-                      <td>
-                        <select
-                          aria-label={formatMessage(
-                            t('workspaceResultValidation'),
-                            { title: result.title },
-                          )}
-                          value={result.verification_status}
-                          onChange={(e) =>
-                            void osintApi
-                              .verifyResult(
-                                result.id,
-                                e.target
-                                  .value as OsintResult['verification_status'],
-                              )
-                              .then(() => loadResultPage(resultPage.page))
-                          }
-                        >
-                          <option value="uncertain">
-                            {t('workspaceUncertain')}
-                          </option>
-                          <option value="probable">
-                            {t('workspaceProbable')}
-                          </option>
-                          <option value="confirmed">
-                            {t('workspaceConfirmed')}
-                          </option>
-                          <option value="false_positive">
-                            {t('workspaceFalsePositive')}
-                          </option>
-                          <option value="ignored">
-                            {t('workspaceIgnored')}
-                          </option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
+                  {resultPage.items.map((result) => {
+                    const correlation = correlations[result.id]
+                    const isOpen = openCorrelationResultId === result.id
+                    const isCorrelationBusy = correlationBusy === result.id
+                    return (
+                      <Fragment key={result.id}>
+                        <tr>
+                          <td>{result.connector_id}</td>
+                          <td>
+                            <a
+                              className="font-semibold text-teal-700"
+                              href={result.canonical_url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {result.title}{' '}
+                              <ExternalLink className="inline" size={14} />
+                            </a>
+                            <p className="mt-1 max-w-xl text-xs text-slate-500">
+                              {result.snippet}
+                            </p>
+                          </td>
+                          <td>{Math.round(result.relevance_score * 100)} %</td>
+                          <td>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span>
+                                {t(
+                                  resultStatusLabelKeys[
+                                    result.verification_status
+                                  ],
+                                )}
+                              </span>
+                              <button
+                                className="secondary-button"
+                                type="button"
+                                disabled={isCorrelationBusy}
+                                aria-expanded={isOpen}
+                                onClick={() => void toggleCorrelation(result)}
+                              >
+                                {isOpen
+                                  ? t('workspaceHideEvidence')
+                                  : t('workspaceReviewEvidence')}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {isOpen && !correlation && (
+                          <tr>
+                            <td colSpan={4}>{t('workspaceLoadingEvidence')}</td>
+                          </tr>
+                        )}
+                        {isOpen && correlation && (
+                          <tr>
+                            <td colSpan={4}>
+                              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                <div className="grid gap-2 text-sm md:grid-cols-3">
+                                  <p>
+                                    {t('workspaceRelevanceScore')}:{' '}
+                                    {Math.round(
+                                      correlation.relevance_score * 100,
+                                    )}{' '}
+                                    %
+                                  </p>
+                                  <p>
+                                    {t('workspaceAttributionScore')}:{' '}
+                                    {Math.round(
+                                      correlation.attribution_score * 100,
+                                    )}{' '}
+                                    %
+                                  </p>
+                                  <p>
+                                    {t('workspaceIndependentEvidence')}:{' '}
+                                    {correlation.evidence_count}
+                                  </p>
+                                </div>
+                                {correlation.explanation.warning && (
+                                  <p className="mt-2 text-xs text-amber-800">
+                                    {correlation.explanation.warning}
+                                  </p>
+                                )}
+                                {(correlation.explanation.risk_flags?.length ??
+                                  0) > 0 && (
+                                  <p className="mt-2 text-xs text-amber-800">
+                                    {t('workspaceRiskFlags')}:{' '}
+                                    {correlation.explanation.risk_flags?.join(
+                                      ', ',
+                                    )}
+                                  </p>
+                                )}
+                                <div className="mt-4 space-y-3">
+                                  {correlation.evidence.map((evidence) => (
+                                    <article
+                                      className="rounded-lg bg-white p-3"
+                                      key={evidence.id}
+                                    >
+                                      <p className="text-sm">
+                                        {evidence.excerpt}
+                                      </p>
+                                      <ul className="mt-2 list-disc pl-5 text-xs text-slate-600">
+                                        {evidence.matches.map((match) => (
+                                          <li
+                                            key={`${match.criterion_type}-${match.match_kind}`}
+                                          >
+                                            {match.explanation}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </article>
+                                  ))}
+                                </div>
+                                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                  <label>
+                                    {t('workspaceAttributedProfile')}
+                                    <select
+                                      className="mt-1 w-full"
+                                      value={
+                                        attributionProfiles[result.id] ||
+                                        result.profile_id
+                                      }
+                                      onChange={(event) =>
+                                        setAttributionProfiles((current) => ({
+                                          ...current,
+                                          [result.id]: event.target.value,
+                                        }))
+                                      }
+                                    >
+                                      {profiles.map((profile) => (
+                                        <option
+                                          key={profile.id}
+                                          value={profile.id}
+                                        >
+                                          {profile.first_name}{' '}
+                                          {profile.last_name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                  <label className="flex items-center gap-2 self-end text-sm">
+                                    <input
+                                      type="checkbox"
+                                      checked={Boolean(
+                                        addConfirmedProfiles[result.id],
+                                      )}
+                                      onChange={(event) =>
+                                        setAddConfirmedProfiles((current) => ({
+                                          ...current,
+                                          [result.id]: event.target.checked,
+                                        }))
+                                      }
+                                    />
+                                    {t('workspaceAddConfirmedProfile')}
+                                  </label>
+                                </div>
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                  <button
+                                    className="primary-button"
+                                    type="button"
+                                    disabled={isCorrelationBusy}
+                                    onClick={() =>
+                                      void reviewCorrelation(
+                                        result,
+                                        'confirmed',
+                                      )
+                                    }
+                                  >
+                                    {t('workspaceConfirmMatch')}
+                                  </button>
+                                  <button
+                                    className="secondary-button"
+                                    type="button"
+                                    disabled={isCorrelationBusy}
+                                    onClick={() =>
+                                      void reviewCorrelation(
+                                        result,
+                                        'uncertain',
+                                      )
+                                    }
+                                  >
+                                    {t('workspaceMarkUncertain')}
+                                  </button>
+                                  <button
+                                    className="secondary-button"
+                                    type="button"
+                                    disabled={isCorrelationBusy}
+                                    onClick={() =>
+                                      void reviewCorrelation(result, 'rejected')
+                                    }
+                                  >
+                                    {t('workspaceRejectMatch')}
+                                  </button>
+                                  <button
+                                    className="secondary-button"
+                                    type="button"
+                                    disabled={isCorrelationBusy}
+                                    onClick={() =>
+                                      void reviewCorrelation(
+                                        result,
+                                        'rejected',
+                                        'homonym',
+                                      )
+                                    }
+                                  >
+                                    {t('workspaceExcludeHomonym')}
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

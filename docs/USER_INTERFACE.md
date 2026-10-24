@@ -26,10 +26,23 @@ L'administration complète le catalogue avec la date du dernier contrôle et le
 dernier code d'erreur contrôlé. Elle ne présente pas le statut par défaut comme
 un résultat de campagne.
 
+## Revue des preuves
+
+Chaque mention qui possède une corrélation propose « Examiner les preuves ».
+Le panneau chargé à la demande distingue la pertinence du résultat de la
+confiance d'attribution, rappelle que le score est heuristique et présente les
+extraits bornés, les raisons de correspondance, le nombre de preuves
+indépendantes et les indicateurs de prudence.
+
+L'utilisateur peut confirmer, rejeter, marquer comme incertain ou exclure un
+homonyme. Il peut corriger l'attribution vers un autre de ses profils et choisir
+explicitement d'ajouter l'URL confirmée à ce profil. Ces écritures utilisent le
+jeton CSRF ; aucune case d'ajout n'est cochée par défaut.
+
 ## Validation
 
 Les textes français et anglais sont centralisés dans le catalogue i18n. Les tests
 de composant utilisent des réponses synthétiques et vérifient le chargement à la
-demande ainsi que la présentation prudente d'un résultat négatif. La validation
-comprend Vitest, TypeScript/Vite, ESLint et Prettier.
-
+demande, la présentation prudente d'un résultat négatif et l'exclusion d'un
+homonyme sans accès réseau réel. La validation comprend Vitest, TypeScript/Vite,
+ESLint et Prettier.
