@@ -21,6 +21,8 @@
   distinction des erreurs permanentes/récupérables et journaux sans URL.
 - Normalisation hermétique des sitemaps, RSS et Atom avec `defusedxml`, limites
   strictes, filtrage au domaine source et mise en file avec provenance.
+- Téléchargement anti-SSRF des documents de découverte avec quota persistant,
+  MIME/taille bornés et parcours d'index limité à deux niveaux et 20 documents.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

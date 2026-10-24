@@ -145,8 +145,14 @@ ni port non standard, sont admises.
 
 La mise en file exige une source administrative `active`, conserve son identifiant
 comme provenance et réapplique la canonicalisation et la déduplication du crawler.
-Les index imbriqués sont retournés séparément : leur téléchargement récursif reste
-désactivé jusqu'à l'intégration réseau bornée de la phase D.
+Le téléchargement passe par le client anti-SSRF et son quota persistant pour
+chaque document et chaque redirection. Une redirection hors du domaine exact est
+refusée avant l'envoi de la requête HTTP correspondante.
+
+Le parcours d'un index est limité à deux niveaux, 20 documents et 1 000 pages au
+total. Les contenus XML acceptés sont limités à 512 Kio et aux types MIME XML,
+RSS ou Atom. Le service reste isolé de la planification : l'activation d'une
+source dans l'API d'administration ne déclenche pas elle-même de téléchargement.
 
 ## Compatibilité et indexation
 

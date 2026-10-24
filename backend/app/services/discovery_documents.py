@@ -83,6 +83,19 @@ def enqueue_discovery_document(
         access_method=source.access_method,
         source_domain=source.domain,
     )
+    return enqueue_discovery_batch(db, scan, source, batch, now=now)
+
+
+def enqueue_discovery_batch(
+    db: Session,
+    scan: Scan,
+    source: WebSource,
+    batch: DiscoveryBatch,
+    *,
+    now: datetime | None = None,
+) -> DiscoveryEnqueueResult:
+    if source.state != "active":
+        raise DiscoveryDocumentError("Source Web inactive")
     created_count = 0
     for candidate in batch.items:
         try:

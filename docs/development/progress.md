@@ -96,13 +96,15 @@ en environnement réel restent des opérations séparées, non exécutées ici.
       domaine et sources inactives, puis mettre les pages en file avec provenance.
 - [x] Permettre à l'administrateur d'activer explicitement une source vérifiée ;
       une source nouvelle reste `pending` par défaut.
-- [ ] Télécharger les documents de découverte via le client anti-SSRF et traiter
+- [x] Télécharger les documents de découverte via le client anti-SSRF et traiter
       récursivement les index de sitemaps avec une profondeur bornée.
+- [ ] Planifier l'exécution des sources actives et persister leur politique de
+      reprise sans lancer de téléchargement dans la requête HTTP d'administration.
 - [ ] Raccorder les résultats autorisés des connecteurs existants et évaluer un
       connecteur Common Crawl désactivable.
 
-La phase D reste **en cours** : les parseurs et la mise en file sont hermétiques,
-mais aucun document sitemap ou flux n'est encore téléchargé automatiquement.
+La phase D reste **en cours** : parseurs, téléchargement et mise en file sont
+hermétiques, mais aucune source n'est encore planifiée automatiquement.
 
 ## Évolution — recherche SearXNG auto-hébergée
 
