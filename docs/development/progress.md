@@ -49,8 +49,16 @@ release ni push distant n'est autorisé à ce stade.
       d'ajout manuel de sources, créées en état `pending` sans accès réseau.
 - [x] Valider `0013` en montée, rétrogradation vers `0012` et remontée sur SQLite
       et PostgreSQL 17 UTF-8, avec contrôle des 32 entrées initiales.
-- [ ] Ajouter les migrations additives `0014` et `0015` après validation
-      successive de chaque lot sur SQLite et PostgreSQL.
+- [x] Implémenter `0014` : URL découvertes, tâches de crawl à baux, résultats
+      minimisés, expiration du cache et statistiques persistantes par campagne.
+- [x] Ajouter une mise en file déterministe avec canonicalisation, empreinte
+      SHA-256, déduplication, profondeur/priorité bornées et premier filtrage des
+      URL manifestement interdites, sans accès réseau.
+- [x] Valider `0014` en montée, rétrogradation vers `0013` et remontée sur SQLite
+      et PostgreSQL 17 UTF-8 ; six tests dédiés, suite backend complète, Ruff et
+      mypy strict réussis.
+- [ ] Ajouter la migration additive `0015` pour les preuves, corrélations et
+      validations utilisateur après validation de `0014` sur les deux bases.
 
 La phase B reste **en cours** : le contrat de stratégie et la trajectoire des
 modèles sont définis ; les migrations et catalogues persistants restent à livrer.

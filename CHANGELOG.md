@@ -9,6 +9,8 @@
   migration additive `0012` compatible SQLite/PostgreSQL.
 - Catalogue persistant des plateformes, statuts de vérification explicites et
   registre administratif des sources Web via la migration `0013`.
+- File persistante de découverte et crawl : URL canoniques dédupliquées, tâches à
+  baux, résultats minimisés, cache et statistiques via la migration `0014`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes
   POST minimisées, consentement explicite frontend/API et déploiement Compose/Debian.
 - Initialisation du dépôt et documentation d'architecture.

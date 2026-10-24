@@ -59,7 +59,8 @@ Les migrations seront additives et réparties pour faciliter les retours arrièr
    téléphones, ville/région, profession, employeurs, profils confirmés,
    expressions exactes et exclusions ;
 2. `0013` : `WebSource`, catalogue des plateformes et configuration autorisée ;
-3. `0014` : `DiscoveredURL`, `CrawlJob`, `CrawlResult` et statistiques ;
+3. `0014` : `DiscoveredURL`, `CrawlJob`, `CrawlResult` et statistiques de campagne,
+   avec déduplication par empreinte d'URL canonique et baux persistants ;
 4. `0015` : `Evidence`, correspondances, corrélations et validations utilisateur.
 
 `Scan` reste la campagne existante et `Result` le résultat public compatible. Les
@@ -76,6 +77,11 @@ nouvelles entités les référencent ; elles ne les dupliquent pas.
 - Les données, validations et exclusions restent cloisonnées par propriétaire.
 - Les pages complètes ne sont pas conservées par défaut ; texte utile, empreinte,
   dates et provenance suffisent au premier périmètre.
+
+La mise en file `0014` refuse déjà les identifiants intégrés aux URL, les ports
+hors 80/443 et les adresses IP littérales non publiques. Un nom DNS accepté à ce
+stade devra encore être résolu et validé juste avant connexion : l'inscription en
+file ne constitue jamais une autorisation réseau.
 
 ## Compatibilité et indexation
 

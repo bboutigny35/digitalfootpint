@@ -204,6 +204,76 @@ class WebSource(Base):
     )
 
 
+class DiscoveredURL(Base):
+    __tablename__ = "discovered_urls"
+    __table_args__ = (UniqueConstraint("scan_id", "url_hash", name="uq_discovered_url_scan_hash"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id", ondelete="CASCADE"), index=True)
+    source_id: Mapped[str | None] = mapped_column(
+        ForeignKey("web_sources.id", ondelete="SET NULL"), index=True
+    )
+    original_url: Mapped[str] = mapped_column(Text)
+    canonical_url: Mapped[str] = mapped_column(Text)
+    url_hash: Mapped[str] = mapped_column(String(64))
+    domain: Mapped[str] = mapped_column(String(255), index=True)
+    discovery_method: Mapped[str] = mapped_column(String(80))
+    depth: Mapped[int] = mapped_column(Integer, default=0)
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CrawlJob(Base):
+    __tablename__ = "crawl_jobs"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id", ondelete="CASCADE"), index=True)
+    discovered_url_id: Mapped[str] = mapped_column(
+        ForeignKey("discovered_urls.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    status: Mapped[str] = mapped_column(String(30), default="queued", index=True)
+    priority: Mapped[int] = mapped_column(Integer, default=100, index=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    lease_owner: Mapped[str | None] = mapped_column(String(100), index=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    error_code: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CrawlResult(Base):
+    __tablename__ = "crawl_results"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    crawl_job_id: Mapped[str] = mapped_column(
+        ForeignKey("crawl_jobs.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    final_url: Mapped[str] = mapped_column(Text)
+    mime_type: Mapped[str | None] = mapped_column(String(255))
+    content_length: Mapped[int] = mapped_column(Integer, default=0)
+    content_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    cache_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class CrawlStatistics(Base):
+    __tablename__ = "crawl_statistics"
+    scan_id: Mapped[str] = mapped_column(
+        ForeignKey("scans.id", ondelete="CASCADE"), primary_key=True
+    )
+    discovered_count: Mapped[int] = mapped_column(Integer, default=0)
+    queued_count: Mapped[int] = mapped_column(Integer, default=0)
+    fetched_count: Mapped[int] = mapped_column(Integer, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0)
+    bytes_downloaded: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class ReportExport(Base):
     __tablename__ = "report_exports"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
