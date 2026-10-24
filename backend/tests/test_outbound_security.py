@@ -3,7 +3,12 @@ import asyncio
 import httpx
 import pytest
 
-from app.security.outbound import SafeHttpClient, UnsafeOutboundUrl, validate_public_url
+from app.security.outbound import (
+    OutboundResponseTooLarge,
+    SafeHttpClient,
+    UnsafeOutboundUrl,
+    validate_public_url,
+)
 
 
 async def resolver(_hostname: str, _port: int) -> list[str]:
@@ -103,3 +108,42 @@ def test_connection_is_pinned_to_validated_address_with_tls_hostname() -> None:
     assert requests[0].headers["Host"] == "public.example.test"
     assert requests[0].headers["Connection"] == "close"
     assert requests[0].extensions["sni_hostname"] == "public.example.test"
+
+
+def test_limited_download_stops_when_stream_exceeds_limit() -> None:
+    class OversizedStream(httpx.AsyncByteStream):
+        async def __aiter__(self):  # type: ignore[no-untyped-def]
+            yield b"1234"
+            yield b"5678"
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, headers={"Content-Type": "text/plain"}, stream=OversizedStream())
+
+    async def run() -> None:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            await SafeHttpClient(client, resolver=resolver).get_limited(
+                "https://public.example.test/resource",
+                max_bytes=7,
+                allowed_mime_types={"text/plain"},
+            )
+
+    with pytest.raises(OutboundResponseTooLarge):
+        asyncio.run(run())
+
+
+def test_limited_download_revalidates_redirect_destination() -> None:
+    requested: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested.append(str(request.url))
+        return httpx.Response(302, headers={"Location": "http://127.0.0.1/private"})
+
+    async def run() -> None:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            await SafeHttpClient(client, resolver=resolver).get_limited(
+                "https://public.example.test/start", max_bytes=100
+            )
+
+    with pytest.raises(UnsafeOutboundUrl):
+        asyncio.run(run())
+    assert requested == ["https://93.184.216.34/start"]

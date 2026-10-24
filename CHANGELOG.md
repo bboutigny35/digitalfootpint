@@ -13,6 +13,8 @@
   baux, résultats minimisés, cache et statistiques via la migration `0014`.
 - Planificateur de crawl persistant avec priorité, acquisition atomique, baux de
   cinq minutes, trois tentatives, reprise bornée et contrôle privé pause/reprise.
+- Fetcher Web isolé avec robots.txt, quota persistant par domaine pseudonymisé,
+  téléchargement borné, filtrage MIME et validation SSRF de chaque redirection.
 - Preuves avec provenance, correspondances minimisées, confiance d'attribution
   distincte et validations privées via la migration `0015`.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes

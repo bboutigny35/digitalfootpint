@@ -97,9 +97,23 @@ plafond de 24 heures. Après la troisième tentative, la tâche devient `failed`
 les statistiques de campagne sont mises à jour. La pause d'une campagne ne
 modifie que ses tâches en attente ; les tâches déjà acquises terminent leur bail.
 
-Ce planificateur ne télécharge lui-même aucune ressource. Le futur fetcher devra
-encore appliquer robots.txt, quotas et validation SSRF après résolution DNS et à
-chaque redirection avant de produire un `CrawlResult`.
+Ce planificateur ne télécharge lui-même aucune ressource. Le fetcher séparé
+applique robots.txt, quotas et validation SSRF après résolution DNS et à chaque
+redirection avant que l'intégration future ne produise un `CrawlResult`.
+
+Le fetcher HTTP est désormais disponible comme service isolé, sans raccordement
+automatique au worker. Il consulte `robots.txt` avant la page, bloque en cas de
+refus et échoue de manière récupérable si ce fichier est temporairement
+indisponible. Chaque requête et redirection repasse par la résolution publique et
+la connexion épinglée du client anti-SSRF. Un quota persistant partagé est réservé
+par empreinte SHA-256 du domaine, sans conserver le nom de domaine dans la table
+de limitation.
+
+Les réponses robots sont limitées à 256 Kio et les pages à 2 Mio, y compris en
+l'absence de `Content-Length`. Le flux est interrompu dès dépassement. Seuls le
+HTML, XHTML et le texte brut sont acceptés pour une page ; le fetcher n'exécute
+aucun script et ne charge aucune sous-ressource. Les réponses `429` transmettent
+un `Retry-After` numérique plafonné à 24 heures au planificateur.
 
 ## Compatibilité et indexation
 

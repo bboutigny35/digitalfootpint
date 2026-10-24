@@ -17,6 +17,14 @@ class UnsafeOutboundUrl(ValueError):
     """Destination refusée sans révéler de détails réseau sensibles."""
 
 
+class OutboundResponseTooLarge(ValueError):
+    """Réponse distante interrompue dès que la limite autorisée est dépassée."""
+
+
+class OutboundResponseTypeRejected(ValueError):
+    """Type de contenu distant absent ou non autorisé."""
+
+
 async def system_resolver(hostname: str, port: int) -> Iterable[str]:
     def resolve() -> set[str]:
         records = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
@@ -111,9 +119,7 @@ class SafeHttpClient:
         request_headers = dict(headers or {})
         initial_origin = self._origin(url)
         for redirect_count in range(self._max_redirects + 1):
-            _, hostname, port, addresses = await resolve_public_url(
-                current_url, self._resolver
-            )
+            _, hostname, port, addresses = await resolve_public_url(current_url, self._resolver)
             if self._origin(current_url) != initial_origin:
                 request_headers.pop("Authorization", None)
                 request_headers.pop("authorization", None)
@@ -149,6 +155,102 @@ class SafeHttpClient:
             if not location:
                 raise UnsafeOutboundUrl("Redirection sans destination")
             current_url = urljoin(current_url, location)
+        raise UnsafeOutboundUrl("Redirection refusée")
+
+    async def get_limited(
+        self,
+        url: str,
+        *,
+        max_bytes: int,
+        allowed_mime_types: set[str] | None = None,
+        before_request: Callable[[str], Awaitable[None]] | None = None,
+        headers: Mapping[str, str] | None = None,
+        timeout: float = 10.0,
+    ) -> httpx.Response:
+        """Télécharge au plus ``max_bytes`` après validation de chaque destination."""
+        if max_bytes < 1:
+            raise ValueError("La limite de réponse doit être positive")
+        current_url = url
+        request_headers = dict(headers or {})
+        initial_origin = self._origin(url)
+        for redirect_count in range(self._max_redirects + 1):
+            _, hostname, port, addresses = await resolve_public_url(current_url, self._resolver)
+            if before_request is not None:
+                await before_request(hostname)
+            if self._origin(current_url) != initial_origin:
+                request_headers.pop("Authorization", None)
+                request_headers.pop("authorization", None)
+            pinned_headers = dict(request_headers)
+            parsed = urlsplit(current_url)
+            pinned_headers["Host"] = _host_header(hostname, parsed.scheme, port)
+            pinned_headers["Connection"] = "close"
+            response: httpx.Response | None = None
+            last_connection_error: httpx.ConnectError | httpx.ConnectTimeout | None = None
+            for address in addresses:
+                request = self._client.build_request(
+                    "GET",
+                    _pinned_url(current_url, address),
+                    headers=pinned_headers,
+                    timeout=timeout,
+                    extensions={"sni_hostname": hostname},
+                )
+                try:
+                    response = await self._client.send(request, stream=True, follow_redirects=False)
+                    break
+                except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+                    last_connection_error = exc
+            if response is None:
+                if last_connection_error is not None:
+                    raise last_connection_error
+                raise UnsafeOutboundUrl("Aucune destination publique disponible")
+            if response.status_code in {301, 302, 303, 307, 308}:
+                await response.aclose()
+                if redirect_count >= self._max_redirects:
+                    raise UnsafeOutboundUrl("Trop de redirections")
+                location = response.headers.get("location")
+                if not location:
+                    raise UnsafeOutboundUrl("Redirection sans destination")
+                current_url = urljoin(current_url, location)
+                continue
+            if (
+                allowed_mime_types is not None
+                and 200 <= response.status_code < 300
+                and response.status_code != 204
+            ):
+                mime_type = (
+                    response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+                )
+                if mime_type not in allowed_mime_types:
+                    await response.aclose()
+                    raise OutboundResponseTypeRejected("Type de contenu distant refusé")
+            declared_length = response.headers.get("content-length")
+            if declared_length is not None:
+                try:
+                    parsed_length = int(declared_length)
+                except ValueError as exc:
+                    await response.aclose()
+                    raise UnsafeOutboundUrl("Longueur de réponse invalide") from exc
+                if parsed_length < 0:
+                    await response.aclose()
+                    raise UnsafeOutboundUrl("Longueur de réponse invalide")
+                if parsed_length > max_bytes:
+                    await response.aclose()
+                    raise OutboundResponseTooLarge("Réponse distante trop volumineuse")
+            body = bytearray()
+            try:
+                async for chunk in response.aiter_bytes():
+                    body.extend(chunk)
+                    if len(body) > max_bytes:
+                        raise OutboundResponseTooLarge("Réponse distante trop volumineuse")
+            finally:
+                await response.aclose()
+            return httpx.Response(
+                response.status_code,
+                headers=response.headers,
+                content=bytes(body),
+                request=response.request,
+                extensions={"validated_url": current_url},
+            )
         raise UnsafeOutboundUrl("Redirection refusée")
 
     @staticmethod

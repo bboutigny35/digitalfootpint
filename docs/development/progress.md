@@ -76,13 +76,14 @@ des phases C à G et ne sont pas encore déclarés opérationnels.
       jitter, puis comptabiliser les échecs définitifs.
 - [x] Exposer au propriétaire l'état agrégé de sa file et les contrôles pause /
       reprise protégés par CSRF, sans déclencher d'accès réseau.
-- [ ] Implémenter le fetcher HTTP avec robots.txt, quotas par domaine, limites de
+- [x] Implémenter le fetcher HTTP avec robots.txt, quotas par domaine, limites de
       taille/MIME et validation SSRF à chaque résolution et redirection.
 - [ ] Extraire et persister le contenu minimisé, les liens admissibles et la
       provenance, puis raccorder le worker aux tâches de crawl.
 
-La phase C reste **en cours** : l'ordonnancement persistant est présent, mais
-aucune tâche de cette nouvelle file ne télécharge encore de page Web.
+La phase C reste **en cours** : le fetcher est testé uniquement avec des
+transports HTTP simulés et n'est pas encore raccordé au worker. Aucune tâche de
+la nouvelle file ne télécharge donc encore de page Web en exploitation.
 
 ## Évolution — recherche SearXNG auto-hébergée
 
