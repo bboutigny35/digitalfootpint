@@ -142,6 +142,25 @@ La phase E reste **en cours** : le contrat persistant, le moteur systématique,
 Bluesky et les vues utilisateur/administrative sont en place. L'ajout éventuel
 d'autres connecteurs prioritaires exige encore une méthode officielle adaptée.
 
+## Phase F — analyse et corrélation
+
+- [x] Alimenter atomiquement `Evidence`, `EvidenceMatch` et
+      `IdentityCorrelation` lors du crawl de la page racine d'un résultat de
+      connecteur, avec extraits bornés, provenance versionnée et critères hachés
+      par propriétaire.
+- [x] Limiter la première analyse aux correspondances exactes normalisées,
+      conserver séparément pertinence et attribution, plafonner le nom seul et
+      ne jamais attribuer implicitement une page secondaire.
+- [ ] Ajouter la revue utilisateur privée (confirmation, rejet, incertitude,
+      correction d'attribution et exclusion d'un homonyme) et sa réutilisation
+      strictement limitée au même propriétaire.
+- [ ] Étendre prudemment la détection des doublons, contradictions et
+      rapprochements approximatifs contrôlés avec leurs explications et tests.
+
+La phase F est **en cours** : l'analyse exacte des pages racines est raccordée à
+la transaction de crawl. La revue humaine et les rapprochements contrôlés ne
+sont pas encore exposés.
+
 ## Évolution — recherche SearXNG auto-hébergée
 
 - [x] Connecteur SearXNG local : API JSON via POST, maximum cinq requêtes par

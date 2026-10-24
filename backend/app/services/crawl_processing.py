@@ -20,6 +20,7 @@ from app.models.entities import (
     Scan,
     WebSource,
 )
+from app.services.correlation import analyze_crawl_evidence
 from app.services.crawl_queue import MAX_DEPTH, enqueue_discovered_url
 from app.services.web_fetcher import WebFetchResult
 
@@ -147,6 +148,13 @@ def persist_crawl_success(
         cache_expires_at=fetched_at + cache_ttl,
     )
     db.add(result)
+    db.flush()
+    analyze_crawl_evidence(
+        db,
+        scan=scan,
+        discovered=discovered,
+        crawl_result=result,
+    )
     if discovered.depth < MAX_DEPTH:
         for link in extracted.links:
             try:

@@ -12,7 +12,11 @@ from app.models.entities import (
     CrawlResult,
     CrawlStatistics,
     DiscoveredURL,
+    Evidence,
+    EvidenceMatch,
+    IdentityCorrelation,
     IdentityProfile,
+    Result,
     Scan,
     User,
     WebSource,
@@ -26,7 +30,13 @@ def make_scan(db: Session) -> Scan:
     user = User(email="processing@example.test", password_hash="synthetic-test-hash")  # noqa: S106
     db.add(user)
     db.flush()
-    profile = IdentityProfile(owner_id=user.id, first_name="Test", last_name="Processing")
+    profile = IdentityProfile(
+        owner_id=user.id,
+        first_name="Test",
+        last_name="Processing",
+        pseudonyms=["ProcessFox"],
+        employers=["Example Org"],
+    )
     db.add(profile)
     db.flush()
     scan = Scan(owner_id=user.id, profile_id=profile.id, connector_ids=[])
@@ -61,7 +71,10 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
     engine = create_engine(f"sqlite+pysqlite:///{tmp_path}/processing.db")
     Base.metadata.create_all(engine)
     now = datetime(2026, 1, 1, tzinfo=UTC)
-    body = b'<html><body>Profile <a href="/next">next</a></body></html>'
+    body = (
+        b'<html><body>Test Processing, also ProcessFox at Example Org. '
+        b'<a href="/next">next</a></body></html>'
+    )
     fetch = WebFetchResult(
         final_url="https://example.test/root",
         http_status=200,
@@ -78,13 +91,27 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
             cache_ttl_seconds=3600,
         )
         db.add(source)
+        connector_result = Result(
+            owner_id=scan.owner_id,
+            profile_id=scan.profile_id,
+            scan_id=scan.id,
+            connector_id="synthetic",
+            canonical_url=fetch.final_url,
+            domain="example.test",
+            title="Synthetic public profile",
+            snippet="Synthetic snippet",
+            match_type="profile",
+            relevance_score=0.45,
+            score_explanation={"method": "test"},
+        )
+        db.add(connector_result)
         db.commit()
         queued = enqueue_discovered_url(
             db,
             scan,
             fetch.final_url,
             source_id=source.id,
-            discovery_method="manual",
+            discovery_method="connector:synthetic",
             priority=20,
         )
         assert claim_next_crawl_job(db, "worker", now) == queued.crawl_job.id
@@ -97,7 +124,9 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
             db, queued.crawl_job.id, fetch, extracted, worker_id="worker", now=now
         )
 
-        assert result.extracted_text == "Profile next"
+        assert result.extracted_text == (
+            "Test Processing, also ProcessFox at Example Org. next"
+        )
         assert result.content_length == len(body)
         assert result.content_hash == hashlib.sha256(body).hexdigest()
         assert result.cache_expires_at is not None
@@ -121,6 +150,36 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
         assert source.crawled_page_count == 1
         assert source.last_checked_at is not None
 
+        correlation = db.scalar(
+            select(IdentityCorrelation).where(
+                IdentityCorrelation.result_id == connector_result.id
+            )
+        )
+        assert correlation is not None
+        assert correlation.relevance_score == 0.45
+        assert correlation.attribution_score == 0.55
+        assert correlation.evidence_count == 1
+        evidence = db.scalar(
+            select(Evidence).where(Evidence.crawl_result_id == result.id)
+        )
+        assert evidence is not None
+        assert evidence.result_id == connector_result.id
+        assert len(evidence.excerpt) <= 500
+        assert evidence.provenance == {
+            "method": "exact-identity-evidence-v1",
+            "discovery_method": "connector:synthetic",
+            "match_count": 3,
+        }
+        matches = list(
+            db.scalars(select(EvidenceMatch).where(EvidenceMatch.evidence_id == evidence.id))
+        )
+        assert {item.criterion_type for item in matches} == {
+            "name",
+            "pseudonym",
+            "employer",
+        }
+        assert all("Test Processing" not in item.criterion_hash for item in matches)
+
         same_result = persist_crawl_success(
             db, queued.crawl_job.id, fetch, extracted, worker_id="worker", now=now
         )
@@ -128,6 +187,32 @@ def test_persist_success_is_atomic_minimized_and_idempotent(tmp_path: Path) -> N
         assert db.scalar(select(CrawlResult).where(CrawlResult.crawl_job_id == job.id)) is not None
         db.refresh(statistics)
         assert statistics.fetched_count == 1
+        assert db.scalar(
+            select(IdentityCorrelation).where(
+                IdentityCorrelation.result_id == connector_result.id
+            )
+        ) is not None
+
+        secondary_job_id = claim_next_crawl_job(db, "worker", now)
+        assert secondary_job_id is not None
+        secondary_fetch = WebFetchResult(
+            final_url="https://example.test/next",
+            http_status=200,
+            mime_type="text/plain",
+            content=b"Test Processing at a secondary page",
+        )
+        secondary = persist_crawl_success(
+            db,
+            secondary_job_id,
+            secondary_fetch,
+            extract_page(secondary_fetch),
+            worker_id="worker",
+            now=now,
+        )
+        assert db.scalar(
+            select(Evidence).where(Evidence.crawl_result_id == secondary.id)
+        ) is None
+        assert len(list(db.scalars(select(IdentityCorrelation)))) == 1
     engine.dispose()
 
 
