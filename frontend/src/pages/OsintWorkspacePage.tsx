@@ -47,11 +47,19 @@ type ProfileDraft = Record<
   | 'last_name'
   | 'name_variants'
   | 'pseudonyms'
+  | 'former_pseudonyms'
   | 'emails'
+  | 'phone_numbers'
+  | 'city_region'
+  | 'profession'
+  | 'employers'
   | 'domains'
   | 'websites'
   | 'social_profiles'
+  | 'confirmed_profiles'
   | 'keywords'
+  | 'exact_phrases'
+  | 'exclusions'
   | 'context',
   string
 >
@@ -270,11 +278,19 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
       last_name: profile.last_name,
       name_variants: profile.name_variants.join('\n'),
       pseudonyms: profile.pseudonyms.join('\n'),
+      former_pseudonyms: (profile.former_pseudonyms ?? []).join('\n'),
       emails: profile.emails.join('\n'),
+      phone_numbers: (profile.phone_numbers ?? []).join('\n'),
+      city_region: profile.city_region ?? '',
+      profession: profile.profession ?? '',
+      employers: (profile.employers ?? []).join('\n'),
       domains: profile.domains.join('\n'),
       websites: profile.websites.join('\n'),
       social_profiles: profile.social_profiles.join('\n'),
+      confirmed_profiles: (profile.confirmed_profiles ?? []).join('\n'),
       keywords: profile.keywords.join('\n'),
+      exact_phrases: (profile.exact_phrases ?? []).join('\n'),
+      exclusions: (profile.exclusions ?? []).join('\n'),
       context: profile.context ?? '',
     })
   }
@@ -287,11 +303,19 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
       last_name: profileDraft.last_name.trim(),
       name_variants: splitProfileValues(profileDraft.name_variants),
       pseudonyms: splitProfileValues(profileDraft.pseudonyms),
+      former_pseudonyms: splitProfileValues(profileDraft.former_pseudonyms),
       emails: splitProfileValues(profileDraft.emails),
+      phone_numbers: splitProfileValues(profileDraft.phone_numbers),
+      city_region: profileDraft.city_region.trim() || null,
+      profession: profileDraft.profession.trim() || null,
+      employers: splitProfileValues(profileDraft.employers),
       domains: splitProfileValues(profileDraft.domains),
       websites: splitProfileValues(profileDraft.websites),
       social_profiles: splitProfileValues(profileDraft.social_profiles),
+      confirmed_profiles: splitProfileValues(profileDraft.confirmed_profiles),
       keywords: splitProfileValues(profileDraft.keywords),
+      exact_phrases: splitProfileValues(profileDraft.exact_phrases),
+      exclusions: splitProfileValues(profileDraft.exclusions),
       context: profileDraft.context.trim() || null,
     }
     setBusy(true)
@@ -582,8 +606,38 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                     setDraft={setProfileDraft}
                   />
                   <ProfileTextarea
+                    label={t('workspaceFormerPseudonyms')}
+                    field="former_pseudonyms"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileTextarea
                     label={t('workspaceEmails')}
                     field="emails"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileTextarea
+                    label={t('workspacePhoneNumbers')}
+                    field="phone_numbers"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileField
+                    label={t('workspaceCityRegion')}
+                    field="city_region"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileField
+                    label={t('workspaceProfession')}
+                    field="profession"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileTextarea
+                    label={t('workspaceEmployers')}
+                    field="employers"
                     draft={profileDraft}
                     setDraft={setProfileDraft}
                   />
@@ -606,8 +660,26 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                     setDraft={setProfileDraft}
                   />
                   <ProfileTextarea
+                    label={t('workspaceConfirmedProfiles')}
+                    field="confirmed_profiles"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileTextarea
                     label={t('workspaceKeywords')}
                     field="keywords"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileTextarea
+                    label={t('workspaceExactPhrases')}
+                    field="exact_phrases"
+                    draft={profileDraft}
+                    setDraft={setProfileDraft}
+                  />
+                  <ProfileTextarea
+                    label={t('workspaceExclusions')}
+                    field="exclusions"
                     draft={profileDraft}
                     setDraft={setProfileDraft}
                   />

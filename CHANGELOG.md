@@ -2,6 +2,11 @@
 
 ## Non publié
 
+- Planification de recherche déterministe avec modes rapide, standard et
+  approfondi, budgets bornés et prévisualisation privée par profil.
+- Profils enrichis avec anciens pseudonymes, téléphones, localisation,
+  profession, employeurs, profils confirmés, expressions exactes et exclusions ;
+  migration additive `0012` compatible SQLite/PostgreSQL.
 - Connecteur généraliste SearXNG auto-hébergé, endpoints locaux bornés, requêtes
   POST minimisées, consentement explicite frontend/API et déploiement Compose/Debian.
 - Initialisation du dépôt et documentation d'architecture.

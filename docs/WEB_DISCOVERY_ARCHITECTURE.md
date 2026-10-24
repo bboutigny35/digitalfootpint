@@ -55,7 +55,9 @@ ne crée aucune campagne.
 
 Les migrations seront additives et réparties pour faciliter les retours arrière :
 
-1. `0012` : enrichissement facultatif d'`IdentityProfile` et critères structurés ;
+1. `0012` : enrichissement additif d'`IdentityProfile` avec anciens pseudonymes,
+   téléphones, ville/région, profession, employeurs, profils confirmés,
+   expressions exactes et exclusions ;
 2. `0013` : `WebSource`, catalogue des plateformes et configuration autorisée ;
 3. `0014` : `DiscoveredURL`, `CrawlJob`, `CrawlResult` et statistiques ;
 4. `0015` : `Evidence`, correspondances, corrélations et validations utilisateur.

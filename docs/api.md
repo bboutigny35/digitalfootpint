@@ -11,6 +11,13 @@ portée `general`.
 
 L'API est versionnée sous `/api/v1`. OpenAPI et Swagger UI sont servis sur `/docs`.
 
+Les profils acceptent aussi les anciens pseudonymes, téléphones, ville/région,
+profession, employeurs, profils confirmés, expressions exactes et exclusions.
+Les listes textuelles sont normalisées en Unicode NFKC, avec espaces homogènes
+et déduplication insensible à la casse. Les téléphones internationaux commençant
+par `+` ou `00` sont conservés sous une forme `+` suivie de chiffres ; un numéro
+sans indicatif reste numérique afin de ne pas inventer un pays.
+
 - `GET /dashboard` : agrégats complets du propriétaire et évolution quotidienne
   des mentions sur les 30 derniers jours.
 - `POST /auth/bootstrap` : premier compte administrateur uniquement.

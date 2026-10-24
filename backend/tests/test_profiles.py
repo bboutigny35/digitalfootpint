@@ -31,3 +31,43 @@ def test_profile_crud_requires_csrf(authenticated: tuple[TestClient, str]) -> No
 
 def test_profiles_require_authentication(client: TestClient) -> None:
     assert client.get("/api/v1/profiles").status_code == 401
+
+
+def test_profile_normalizes_extended_identity_fields(authenticated: tuple[TestClient, str]) -> None:
+    client, csrf = authenticated
+    response = client.post(
+        "/api/v1/profiles",
+        json={
+            **PROFILE,
+            "first_name": "  Alïce  ",
+            "former_pseudonyms": [" old-alice ", "OLD-ALICE"],
+            "phone_numbers": ["+33 (0) 6 12 34 56 78", "0033 6 12 34 56 78"],
+            "city_region": "  Lyon   Métropole ",
+            "profession": " Ingénieure ",
+            "employers": [" Example  SA "],
+            "confirmed_profiles": ["https://example.com/alice"],
+            "exact_phrases": [" conférence   sécurité "],
+            "exclusions": [" homonyme ", "HOMONYME"],
+        },
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["first_name"] == "Alïce"
+    assert body["former_pseudonyms"] == ["old-alice"]
+    assert body["phone_numbers"] == ["+330612345678", "+33612345678"]
+    assert body["city_region"] == "Lyon Métropole"
+    assert body["profession"] == "Ingénieure"
+    assert body["employers"] == ["Example SA"]
+    assert body["exact_phrases"] == ["conférence sécurité"]
+    assert body["exclusions"] == ["homonyme"]
+
+
+def test_profile_rejects_invalid_phone(authenticated: tuple[TestClient, str]) -> None:
+    client, csrf = authenticated
+    response = client.post(
+        "/api/v1/profiles",
+        json={**PROFILE, "phone_numbers": ["not-a-phone"]},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert response.status_code == 422

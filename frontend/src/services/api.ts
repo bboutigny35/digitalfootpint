@@ -17,11 +17,19 @@ export interface IdentityProfile {
   last_name: string
   name_variants: string[]
   pseudonyms: string[]
+  former_pseudonyms?: string[]
   emails: string[]
+  phone_numbers?: string[]
+  city_region?: string | null
+  profession?: string | null
+  employers?: string[]
   domains: string[]
   websites: string[]
   social_profiles: string[]
+  confirmed_profiles?: string[]
   keywords: string[]
+  exact_phrases?: string[]
+  exclusions?: string[]
   context: string | null
   created_at: string
   updated_at: string

@@ -1,6 +1,33 @@
+import re
+import unicodedata
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 TRACKING_PARAMETERS = {"fbclid", "gclid", "mc_cid", "mc_eid"}
+PHONE_SEPARATORS = re.compile(r"[\s.()\-/]+")
+
+
+def normalize_text(value: str) -> str:
+    return " ".join(unicodedata.normalize("NFKC", value).strip().split())
+
+
+def fold_text(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", normalize_text(value))
+    return "".join(
+        character for character in decomposed if not unicodedata.combining(character)
+    ).casefold()
+
+
+def normalize_phone(value: str) -> str:
+    normalized = normalize_text(value)
+    international = normalized.startswith("+") or normalized.startswith("00")
+    if normalized.startswith("+"):
+        normalized = normalized[1:]
+    elif normalized.startswith("00"):
+        normalized = normalized[2:]
+    digits = PHONE_SEPARATORS.sub("", normalized)
+    if not digits.isdigit() or not 7 <= len(digits) <= 15:
+        raise ValueError("Numéro de téléphone invalide")
+    return f"+{digits}" if international else digits
 
 
 def canonicalize_url(raw_url: str) -> str:

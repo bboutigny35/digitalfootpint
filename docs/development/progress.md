@@ -36,7 +36,14 @@ release ni push distant n'est autorisé à ce stade.
       création de campagne.
 - [x] Valider le moteur et l'API par tests ciblés, puis la suite backend complète,
       Ruff et mypy strict.
-- [ ] Ajouter les modèles et migrations additives `0012` à `0015` après validation
+- [x] Ajouter la migration additive `0012` et les champs d'identité structurés,
+      avec normalisation Unicode, espaces, casse et téléphone conservatrice.
+- [x] Raccorder l'édition React aux nouveaux champs afin de préserver leur valeur,
+      avec libellés FR/EN et contrôles TypeScript, Vitest, build, ESLint et Prettier.
+- [x] Valider `0012` en montée, rétrogradation vers `0011` et remontée sur SQLite
+      et PostgreSQL 17 UTF-8 éphémères ; suite backend complète, Ruff et mypy
+      strict réussis.
+- [ ] Ajouter les modèles et migrations additives `0013` à `0015` après validation
       successive de chaque lot sur SQLite et PostgreSQL.
 
 La phase B reste **en cours** : le contrat de stratégie et la trajectoire des

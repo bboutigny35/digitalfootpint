@@ -41,10 +41,18 @@ class ScanRunner:
             last_name=profile.last_name,
             name_variants=tuple(profile.name_variants),
             pseudonyms=tuple(profile.pseudonyms),
+            former_pseudonyms=tuple(profile.former_pseudonyms),
             emails=tuple(profile.emails),
+            phone_numbers=tuple(profile.phone_numbers),
+            city_region=profile.city_region,
+            profession=profile.profession,
+            employers=tuple(profile.employers),
             domains=tuple(profile.domains),
             keywords=tuple(profile.keywords),
             websites=tuple(profile.websites),
+            confirmed_profiles=tuple(profile.confirmed_profiles),
+            exact_phrases=tuple(profile.exact_phrases),
+            exclusions=tuple(profile.exclusions),
         )
         try:
             for position, connector_id in enumerate(scan.connector_ids, start=1):

@@ -26,10 +26,18 @@ class IdentitySnapshot:
     last_name: str
     name_variants: tuple[str, ...] = ()
     pseudonyms: tuple[str, ...] = ()
+    former_pseudonyms: tuple[str, ...] = ()
     emails: tuple[str, ...] = ()
+    phone_numbers: tuple[str, ...] = ()
+    city_region: str | None = None
+    profession: str | None = None
+    employers: tuple[str, ...] = ()
     domains: tuple[str, ...] = ()
     keywords: tuple[str, ...] = ()
     websites: tuple[str, ...] = ()
+    confirmed_profiles: tuple[str, ...] = ()
+    exact_phrases: tuple[str, ...] = ()
+    exclusions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
