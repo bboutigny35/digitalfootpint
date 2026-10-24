@@ -92,4 +92,13 @@ test('initialise l’instance et crée un profil d’identité', async ({ page }
   expect(backupPath).not.toBeNull()
   const backupBytes = await readFile(backupPath!)
   expect([...backupBytes.subarray(0, 2)]).toEqual([0x1f, 0x8b])
+
+  await page.locator('header').getByLabel('Langue').selectOption('en')
+  await page.getByRole('button', { name: 'Results' }).click()
+  await expect(page.getByRole('heading', { name: 'Results' })).toBeVisible()
+  await page
+    .locator('header')
+    .getByRole('button', { name: 'Change theme' })
+    .click()
+  await expect(page.locator('div.dark')).toHaveCount(1)
 })

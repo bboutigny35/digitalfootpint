@@ -51,5 +51,6 @@ viewport bureau vers mobile dans la même session : initialisation, création de
 profil, navigation, état d'un connecteur non prêt, scan simulé, validation
 rapide, export et sauvegarde. Une recette visuelle avec
 captures reste nécessaire avant de déclarer la phase G terminée. Elle devra
-encore couvrir tablette, les deux thèmes, les deux langues, les contenus longs,
-le clavier seul et les principaux navigateurs pris en charge.
+encore couvrir tablette, les contenus longs, le clavier seul et les principaux
+navigateurs pris en charge. Le passage français vers anglais et l'activation du
+thème sombre sont vérifiés dans le viewport mobile du parcours E2E.

@@ -183,6 +183,8 @@ reste à réaliser.
       validation, export et sauvegarde, sans accès à des données réelles.
 - [x] Corriger la navigation mobile révélée par la recette : le tableau de bord
       est désormais accessible comme sur bureau, avec test de composant adapté.
+- [x] Vérifier dans le parcours mobile le changement du français vers l'anglais
+      et l'activation du thème sombre après les opérations principales.
 - [ ] Poursuivre l'audit responsive et ergonomique global des autres vues prévu
       par une recette visuelle multi-largeurs avant de déclarer la phase G terminée.
 
