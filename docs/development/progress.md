@@ -57,11 +57,16 @@ release ni push distant n'est autorisé à ce stade.
 - [x] Valider `0014` en montée, rétrogradation vers `0013` et remontée sur SQLite
       et PostgreSQL 17 UTF-8 ; six tests dédiés, suite backend complète, Ruff et
       mypy strict réussis.
-- [ ] Ajouter la migration additive `0015` pour les preuves, corrélations et
-      validations utilisateur après validation de `0014` sur les deux bases.
+- [x] Ajouter `0015` pour les preuves, correspondances minimisées, corrélations
+      séparant pertinence et attribution, contradictions et validations privées.
+- [x] Implémenter un score d'attribution explicable, plafonner le nom seul et
+      pénaliser les contradictions sans présenter le résultat comme probabilité.
+- [x] Valider `0015` en montée, rétrogradation vers `0014` et remontée sur SQLite
+      et PostgreSQL 17 UTF-8 ; suite backend complète, Ruff et mypy réussis.
 
-La phase B reste **en cours** : le contrat de stratégie et la trajectoire des
-modèles sont définis ; les migrations et catalogues persistants restent à livrer.
+La phase B est **terminée pour l'architecture et les fondations persistantes**.
+Les moteurs qui alimenteront ces modèles, leurs API et leurs interfaces relèvent
+des phases C à G et ne sont pas encore déclarés opérationnels.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

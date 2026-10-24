@@ -274,6 +274,79 @@ class CrawlStatistics(Base):
     )
 
 
+class Evidence(Base):
+    __tablename__ = "evidence"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id", ondelete="CASCADE"), index=True)
+    result_id: Mapped[str | None] = mapped_column(
+        ForeignKey("results.id", ondelete="CASCADE"), index=True
+    )
+    crawl_result_id: Mapped[str | None] = mapped_column(
+        ForeignKey("crawl_results.id", ondelete="CASCADE"), index=True
+    )
+    evidence_type: Mapped[str] = mapped_column(String(80), index=True)
+    excerpt: Mapped[str] = mapped_column(Text)
+    source_url: Mapped[str] = mapped_column(Text)
+    source_hash: Mapped[str] = mapped_column(String(64), index=True)
+    provenance: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class EvidenceMatch(Base):
+    __tablename__ = "evidence_matches"
+    __table_args__ = (
+        UniqueConstraint(
+            "evidence_id", "criterion_type", "criterion_hash", name="uq_evidence_match"
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    evidence_id: Mapped[str] = mapped_column(
+        ForeignKey("evidence.id", ondelete="CASCADE"), index=True
+    )
+    criterion_type: Mapped[str] = mapped_column(String(80), index=True)
+    criterion_hash: Mapped[str] = mapped_column(String(64))
+    match_kind: Mapped[str] = mapped_column(String(40))
+    weight: Mapped[float] = mapped_column(Float)
+    explanation: Mapped[str] = mapped_column(Text)
+
+
+class IdentityCorrelation(Base):
+    __tablename__ = "identity_correlations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    result_id: Mapped[str] = mapped_column(
+        ForeignKey("results.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    relevance_score: Mapped[float] = mapped_column(Float)
+    attribution_score: Mapped[float] = mapped_column(Float)
+    explanation: Mapped[dict[str, Any]] = mapped_column(JSON)
+    contradictions: Mapped[list[str]] = mapped_column(JSON, default=list)
+    evidence_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class UserValidation(Base):
+    __tablename__ = "user_validations"
+    __table_args__ = (
+        UniqueConstraint("owner_id", "correlation_id", name="uq_user_validation_correlation"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    correlation_id: Mapped[str] = mapped_column(
+        ForeignKey("identity_correlations.id", ondelete="CASCADE"), index=True
+    )
+    decision: Mapped[str] = mapped_column(String(30), index=True)
+    exclusion_kind: Mapped[str | None] = mapped_column(String(80))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class ReportExport(Base):
     __tablename__ = "report_exports"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str)
