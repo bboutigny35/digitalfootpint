@@ -1212,13 +1212,30 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                           <td>{Math.round(result.relevance_score * 100)} %</td>
                           <td>
                             <div className="flex flex-wrap items-center gap-2">
-                              <span>
-                                {t(
-                                  resultStatusLabelKeys[
-                                    result.verification_status
-                                  ],
+                              <select
+                                aria-label={formatMessage(
+                                  t('workspaceResultValidation'),
+                                  { title: result.title },
                                 )}
-                              </span>
+                                value={result.verification_status}
+                                onChange={(event) =>
+                                  void osintApi
+                                    .verifyResult(
+                                      result.id,
+                                      event.target
+                                        .value as OsintResult['verification_status'],
+                                    )
+                                    .then(() => loadResultPage(resultPage.page))
+                                }
+                              >
+                                {Object.entries(resultStatusLabelKeys).map(
+                                  ([status, label]) => (
+                                    <option key={status} value={status}>
+                                      {t(label)}
+                                    </option>
+                                  ),
+                                )}
+                              </select>
                               <button
                                 className="secondary-button"
                                 type="button"

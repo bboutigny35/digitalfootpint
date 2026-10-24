@@ -26,6 +26,8 @@ test('initialise l’instance et crée un profil d’identité', async ({ page }
   await expect(profiles.locator('..')).toContainText('Alice Exemple')
   await expect(profiles.locator('..')).toContainText('alice-test, aexemple')
 
+  await page.setViewportSize({ width: 393, height: 851 })
+
   await page.getByRole('button', { name: 'Tableau de bord' }).click()
   await expect(
     page.getByRole('heading', { name: 'Tableau de bord' }),
@@ -33,24 +35,11 @@ test('initialise l’instance et crée un profil d’identité', async ({ page }
   await expect(page.getByText('1', { exact: true }).first()).toBeVisible()
 
   await page.getByRole('button', { name: 'Recherches' }).click()
-  await page.getByLabel('Sélectionner un connecteur').selectOption('brave')
-  await expect(page.getByRole('note')).toContainText('Brave Search')
-  const pendingScanRequests: string[] = []
-  page.on('request', (request) => {
-    if (
-      request.url().endsWith('/api/v1/scans') &&
-      request.method() === 'POST'
-    ) {
-      pendingScanRequests.push(request.url())
-    }
-  })
-  const confirmation = page.waitForEvent('dialog')
-  const startBrave = page.getByRole('button', { name: 'Démarrer' }).click()
-  const braveDisclosure = await confirmation
-  expect(braveDisclosure.message()).toContain('Brave Search')
-  await braveDisclosure.dismiss()
-  await startBrave
-  expect(pendingScanRequests).toEqual([])
+  const braveOption = page
+    .getByLabel('Sélectionner un connecteur')
+    .locator('option[value="brave"]')
+  await expect(braveOption).toBeDisabled()
+  await expect(braveOption).toContainText('non configuré')
 
   await page.getByLabel('Sélectionner un connecteur').selectOption('mock')
   const scanResponse = page.waitForResponse(

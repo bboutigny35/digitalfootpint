@@ -178,6 +178,11 @@ reste à réaliser.
 - [x] Réaliser l'audit statique et automatisé de toutes les vues dans
       `docs/UI_AUDIT.md`, corriger le nom accessible des panneaux de preuves et
       inventorier explicitement la recette visuelle restante.
+- [x] Revalider le parcours E2E synthétique sur Chromium avec bascule du viewport
+      bureau vers mobile, y compris connecteur non configuré, scan simulé,
+      validation, export et sauvegarde, sans accès à des données réelles.
+- [x] Corriger la navigation mobile révélée par la recette : le tableau de bord
+      est désormais accessible comme sur bureau, avec test de composant adapté.
 - [ ] Poursuivre l'audit responsive et ergonomique global des autres vues prévu
       par une recette visuelle multi-largeurs avant de déclarer la phase G terminée.
 

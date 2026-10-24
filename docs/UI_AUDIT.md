@@ -26,6 +26,10 @@ preuves ajoute un état `aria-expanded`, référence sa région avec
 de distinguer plusieurs boutons identiques. Les chargements et erreurs sont
 affichés dans l'interface, et les écritures restent protégées par CSRF.
 
+La recette mobile a détecté puis permis de corriger l'absence du tableau de bord
+dans la navigation compacte. Les mêmes destinations sont désormais accessibles
+depuis les navigations bureau et mobile, sous réserve du rôle administrateur.
+
 Les libellés fonctionnels sont centralisés en français et en anglais. Les noms
 techniques provenant du backend (connecteur, méthode ou indicateur de prudence)
 restent affichés comme données et ne sont pas présentés comme texte d'interface.
@@ -42,7 +46,10 @@ restent affichés comme données et ne sont pas présentés comme texte d'interf
 
 ## Reste à valider
 
-Une recette visuelle avec captures aux largeurs mobile, tablette et bureau reste
-nécessaire avant de déclarer la phase G terminée. Elle devra couvrir au minimum
-les deux thèmes, les deux langues, les contenus longs, le clavier seul et les
-principaux navigateurs pris en charge.
+Le parcours Playwright synthétique couvre désormais Chromium avec bascule du
+viewport bureau vers mobile dans la même session : initialisation, création de
+profil, navigation, état d'un connecteur non prêt, scan simulé, validation
+rapide, export et sauvegarde. Une recette visuelle avec
+captures reste nécessaire avant de déclarer la phase G terminée. Elle devra
+encore couvrir tablette, les deux thèmes, les deux langues, les contenus longs,
+le clavier seul et les principaux navigateurs pris en charge.

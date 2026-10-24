@@ -31,7 +31,7 @@ describe('Layout language preference', () => {
       target: { value: 'en' },
     })
 
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: 'Dashboard' })).toHaveLength(2)
     expect(screen.getByRole('heading', { name: 'Reports' })).toBeTruthy()
     expect(window.localStorage.getItem('digitalfootprint.locale')).toBe('en')
     expect(document.documentElement.lang).toBe('en')

@@ -259,6 +259,7 @@ function NavItem({
 }
 
 const mobilePages: AppPage[] = [
+  'dashboard',
   'identities',
   'scans',
   'results',
@@ -274,6 +275,7 @@ function mobileLabel(
   t: (key: Parameters<typeof translate>[1]) => string,
 ): string {
   const keys: Partial<Record<AppPage, Parameters<typeof translate>[1]>> = {
+    dashboard: 'dashboard',
     identities: 'identities',
     scans: 'searches',
     results: 'results',
