@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 
-test('initialise l’instance et crée un profil d’identité', async ({ page }) => {
+test('initialise l’instance et crée un profil d’identité', async ({
+  page,
+}, testInfo) => {
   await page.goto('/')
 
   await page.getByRole('button', { name: 'Première utilisation' }).click()
@@ -64,6 +66,15 @@ test('initialise l’instance et crée un profil d’identité', async ({ page }
   await page.getByRole('button', { name: 'Résultats' }).click()
   const resultTitle = 'Profil public de alice-test'
   await expect(page.getByRole('link', { name: resultTitle })).toBeVisible()
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true)
+  await testInfo.attach('resultats-mobile-francais', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  })
   const validation = page.getByLabel(`Validation de ${resultTitle}`)
   await validation.selectOption('confirmed')
   await expect(validation).toHaveValue('confirmed')
@@ -93,12 +104,27 @@ test('initialise l’instance et crée un profil d’identité', async ({ page }
   const backupBytes = await readFile(backupPath!)
   expect([...backupBytes.subarray(0, 2)]).toEqual([0x1f, 0x8b])
 
-  await page.locator('header').getByLabel('Langue').selectOption('en')
+  const mobileLanguage = page.locator('#mobile-language-select')
+  await mobileLanguage.selectOption('en')
   await page.getByRole('button', { name: 'Results' }).click()
   await expect(page.getByRole('heading', { name: 'Results' })).toBeVisible()
-  await page
+  const mobileTheme = page
     .locator('header')
     .getByRole('button', { name: 'Change theme' })
-    .click()
+  await mobileLanguage.focus()
+  await page.keyboard.press('Tab')
+  await expect(mobileTheme).toBeFocused()
+  await page.keyboard.press('Enter')
   await expect(page.locator('div.dark')).toHaveCount(1)
+
+  await page.setViewportSize({ width: 820, height: 1180 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true)
+  await testInfo.attach('resultats-tablette-anglais-sombre', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  })
 })

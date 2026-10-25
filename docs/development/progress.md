@@ -185,11 +185,13 @@ reste à réaliser.
       est désormais accessible comme sur bureau, avec test de composant adapté.
 - [x] Vérifier dans le parcours mobile le changement du français vers l'anglais
       et l'activation du thème sombre après les opérations principales.
-- [ ] Poursuivre l'audit responsive et ergonomique global des autres vues prévu
-      par une recette visuelle multi-largeurs avant de déclarer la phase G terminée.
+- [x] Ajouter les captures Playwright mobile et tablette, vérifier l'absence de
+      débordement global et l'accès clavier au changement de thème.
 
-La phase G est **en cours** : la revue des preuves est intégrée, mais l'audit
-complet de toutes les pages reste un chantier distinct.
+La phase G est **terminée pour son périmètre automatisé** : revue des preuves,
+audit statique de toutes les vues, tests de composants et parcours Chromium
+multi-largeurs sont validés. Les contrôles manuels de contenus extrêmes et de
+navigation clavier exhaustive restent recommandés avant une version stable.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

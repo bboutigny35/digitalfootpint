@@ -46,11 +46,15 @@ restent affichés comme données et ne sont pas présentés comme texte d'interf
 
 ## Reste à valider
 
-Le parcours Playwright synthétique couvre désormais Chromium avec bascule du
-viewport bureau vers mobile dans la même session : initialisation, création de
-profil, navigation, état d'un connecteur non prêt, scan simulé, validation
-rapide, export et sauvegarde. Une recette visuelle avec
-captures reste nécessaire avant de déclarer la phase G terminée. Elle devra
-encore couvrir tablette, les contenus longs, le clavier seul et les principaux
-navigateurs pris en charge. Le passage français vers anglais et l'activation du
-thème sombre sont vérifiés dans le viewport mobile du parcours E2E.
+Le parcours Playwright synthétique couvre Chromium, seul navigateur actuellement
+configuré par le projet, avec bascule des viewports bureau, mobile (393 × 851) et
+tablette (820 × 1180) dans la même session. Il vérifie l'initialisation, la
+création de profil, la navigation, un connecteur non prêt, un scan simulé, la
+validation rapide, l'export et la sauvegarde. Il joint au rapport les captures
+des résultats en mobile français clair et en tablette anglaise sombre.
+
+Le test vérifie aussi l'absence de débordement horizontal global aux deux petites
+largeurs et l'accès clavier au bouton de thème depuis le sélecteur de langue.
+Les tableaux conservent leur propre défilement horizontal. Les contenus longs
+et une navigation clavier exhaustive de chaque formulaire restent des contrôles
+manuels recommandés, mais ne bloquent plus les critères automatisés de la phase.
