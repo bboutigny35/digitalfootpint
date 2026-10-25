@@ -2,6 +2,8 @@
 
 ## Non publié
 
+- Mise à jour de Vitest vers `4.1.12` après détection de deux vulnérabilités
+  modérées dans `@vitest/mocker` ; l'audit npm ne signale plus de vulnérabilité.
 - Version publique centralisée au format SemVer `0.1.0-dev.0` et procédure de
   release reproductible avec correspondance PEP 440, contrôles et autorisations.
 - Déploiement de validation sur Debian 13 : mise à jour native jusqu'à la migration

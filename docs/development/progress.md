@@ -559,6 +559,16 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
       Maigret avant toute intégration.
 - [ ] Effectuer l’audit final : dépendances, couverture, accessibilité, menace,
       restauration complète, arrêt/reprise des workers et préparation de la version.
+- [x] Rejouer la partie automatisée de l'audit final le 25 octobre 2026 : 196 tests
+      backend réussis, 1 intégration PostgreSQL opt-in ignorée et couverture à
+      90 % ; `pip-audit --strict` sans vulnérabilité connue. L'audit npm a détecté
+      deux vulnérabilités modérées dans `@vitest/mocker` 4.1.11 ; Vitest a été mis
+      à jour en 4.1.12, puis les 26 tests frontend, typecheck, ESLint, Prettier,
+      build et nouvel audit npm sans vulnérabilité ont réussi.
+- [ ] Clore l'audit final après une restauration complète contrôlée de la
+      sauvegarde de `DEB13-TEST`, la recette d'accessibilité manuelle exhaustive et
+      les revues juridiques externes. Ces opérations ne sont pas déduites des tests
+      automatisés ni déclarées terminées sans validation dédiée.
 - [x] Fermeture explicite des connexions SQLite dans le test de sauvegarde ; la
       suite passe sans avertissement avec `-W error::ResourceWarning`.
 
