@@ -32,3 +32,8 @@ def test_searxng_endpoint_is_restricted_to_supported_local_origins() -> None:
     )
     with pytest.raises(ValidationError, match="instance SearXNG locale"):
         Settings(_env_file=None, searxng_url="http://169.254.169.254/latest")
+
+
+def test_brave_contract_requires_explicit_operator_approval() -> None:
+    assert Settings(_env_file=None).brave_contract_approved is False
+    assert Settings(_env_file=None, brave_contract_approved=True).brave_contract_approved is True

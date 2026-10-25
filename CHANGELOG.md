@@ -2,6 +2,10 @@
 
 ## Non publié
 
+- Activation de Brave désormais bloquée par défaut tant que l'opérateur n'a pas
+  attesté une revue contractuelle explicite ; la clé seule ne permet plus son usage.
+- Inventaire préliminaire des conditions et risques des fournisseurs externes,
+  sans présenter cette analyse technique comme une validation juridique.
 - Audit axe intégré au parcours Chromium mobile/tablette, avec correction de
   l'accès clavier aux régions défilables et de contrastes du thème sombre.
 - Installation et restauration natives protégées contre les écritures concurrentes

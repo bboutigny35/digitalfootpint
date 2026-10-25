@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     scan_worker_poll_seconds: float = Field(default=2.0, ge=0.2, le=60)
     github_api_token: str | None = Field(default=None, repr=False)
     brave_api_token: str | None = Field(default=None, repr=False)
+    brave_contract_approved: bool = False
     searxng_url: str | None = Field(default=None, repr=False)
     connector_secret_keys: Annotated[list[str], NoDecode] = Field(
         default_factory=list, repr=False

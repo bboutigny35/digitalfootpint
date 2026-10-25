@@ -16,6 +16,7 @@ services:
       DIGITALFOOTPRINT_SENSITIVE_RETENTION_INTERVAL_SECONDS: ${DIGITALFOOTPRINT_SENSITIVE_RETENTION_INTERVAL_SECONDS:-86400}
       DIGITALFOOTPRINT_SCAN_WORKER_POLL_SECONDS: ${DIGITALFOOTPRINT_SCAN_WORKER_POLL_SECONDS:-2}
       DIGITALFOOTPRINT_GITHUB_API_TOKEN: ${DIGITALFOOTPRINT_GITHUB_API_TOKEN:-}
+      DIGITALFOOTPRINT_BRAVE_CONTRACT_APPROVED: ${DIGITALFOOTPRINT_BRAVE_CONTRACT_APPROVED:-false}
       DIGITALFOOTPRINT_SEARXNG_URL: ${DIGITALFOOTPRINT_SEARXNG_URL:-}
       DIGITALFOOTPRINT_CONNECTOR_SECRET_KEYS: ${DIGITALFOOTPRINT_CONNECTOR_SECRET_KEYS:-}
       DIGITALFOOTPRINT_CONNECTOR_SECRET_ACTIVE_KEY: ${DIGITALFOOTPRINT_CONNECTOR_SECRET_ACTIVE_KEY:-}
@@ -31,7 +32,13 @@ services:
     cap_drop:
       - ALL
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)",
+        ]
       interval: 30s
       timeout: 5s
       retries: 5

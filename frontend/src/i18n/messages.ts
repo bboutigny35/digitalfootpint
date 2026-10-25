@@ -106,7 +106,7 @@ export const messages = {
     adminToken: 'Jeton GitHub',
     adminBraveToken: 'Clé API Brave Search',
     adminBraveDisclosure:
-      'Un scan sélectionné transmet noms et pseudonymes à Brave. Une facturation fournisseur peut s’appliquer.',
+      'Une clé seule ne suffit pas : Brave reste bloqué sans validation contractuelle opérateur. Un scan autorisé transmet noms et pseudonymes et peut être facturé.',
     adminBravePricing: 'Consulter les tarifs Brave Search',
     adminEnabled: 'Activé',
     adminDisabled: 'Désactivé',
@@ -514,7 +514,7 @@ export const messages = {
     adminToken: 'GitHub token',
     adminBraveToken: 'Brave Search API key',
     adminBraveDisclosure:
-      'A selected scan sends names and pseudonyms to Brave. Provider charges may apply.',
+      'A key alone is not enough: Brave stays blocked without operator contract approval. An authorized scan sends names and pseudonyms and may incur charges.',
     adminBravePricing: 'Review Brave Search pricing',
     adminEnabled: 'Enabled',
     adminDisabled: 'Disabled',

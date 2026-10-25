@@ -79,6 +79,8 @@ l'[architecture](docs/WEB_DISCOVERY_ARCHITECTURE.md), la
 [tests](docs/WEB_DISCOVERY_TESTS.md). La corrélation est décrite dans
 [`docs/IDENTITY_CORRELATION.md`](docs/IDENTITY_CORRELATION.md) et la préparation
 d'une version dans [`docs/RELEASE_PROCESS.md`](docs/RELEASE_PROCESS.md).
+La [revue contractuelle des fournisseurs](docs/PROVIDER_LEGAL_REVIEW.md) recense
+les blocages à lever avant toute activation externe réelle.
 
 ## Démarrage Docker Compose
 

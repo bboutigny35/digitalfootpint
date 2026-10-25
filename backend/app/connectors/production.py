@@ -34,7 +34,11 @@ def build_production_registry(
                 quota_exhausted=github_quota_exhausted,
             ),
             BraveSearchConnector(
-                configuration.brave_api_token,
+                (
+                    configuration.brave_api_token
+                    if configuration.brave_contract_approved
+                    else None
+                ),
                 before_request=brave_request_gate,
                 quota_exhausted=brave_quota_exhausted,
             ),

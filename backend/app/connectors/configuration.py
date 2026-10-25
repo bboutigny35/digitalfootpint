@@ -14,11 +14,13 @@ def connector_is_enabled(db: Session, connector_id: str) -> bool:
 
 def connector_is_ready(db: Session, connector_id: str, requires_api_key: bool) -> bool:
     """Indique si un connecteur à clé possède un secret configuré, sans le déchiffrer."""
+    settings = get_settings()
     if connector_id == "searxng":
-        return bool(get_settings().searxng_url)
+        return bool(settings.searxng_url)
+    if connector_id == "brave" and not settings.brave_contract_approved:
+        return False
     if not requires_api_key:
         return True
-    settings = get_settings()
     setting_name = {"brave": "brave_api_token", "github": "github_api_token"}.get(connector_id)
     if setting_name and getattr(settings, setting_name, None):
         return True

@@ -48,18 +48,23 @@ peut pas être récupérée depuis la base.
 La variable historique `DIGITALFOOTPRINT_GITHUB_API_TOKEN` reste acceptée comme
 solution de repli quand aucun secret GitHub n'est enregistré en base.
 
-Brave Search est facultatif et non prêt par absence de clé : aucune recherche ni
-résultat simulé n'est produit sans configuration. Enregistrer la clé Brave dans
-le coffre administrable ou définir `DIGITALFOOTPRINT_BRAVE_API_TOKEN`. Lorsqu'un
-scan sélectionne Brave, les requêtes incluent le nom complet et les pseudonymes du
-profil ; les e-mails, variantes de nom et mots-clés ne sont pas transmis. Chaque
-requête passe par l'API externe, qui voit le terme recherché. Son plan peut
-facturer l'usage et les conditions de conservation dépendent du contrat du
-fournisseur ; la notice Brave indique une conservation possible des journaux de
-requêtes jusqu'à 90 jours. Consulter ses
-[tarifs](https://api-dashboard.search.brave.com/documentation/pricing) et conditions
-avant activation. La limite locale est de cinq requêtes par minute et le nombre
-de requêtes par scan est borné.
+Brave Search est facultatif et bloqué par défaut. Une clé seule ne suffit pas :
+après revue juridique du plan réellement souscrit et confirmation des droits de
+stockage, l'opérateur doit aussi définir
+`DIGITALFOOTPRINT_BRAVE_CONTRACT_APPROVED=true`. Enregistrer ensuite la clé dans
+le coffre administrable ou définir `DIGITALFOOTPRINT_BRAVE_API_TOKEN`. Sans ces
+deux conditions, le connecteur reste non prêt et le worker ne reçoit pas la clé.
+
+Lorsqu'un scan sélectionne Brave, les requêtes incluent le nom complet et les
+pseudonymes du profil ; les e-mails, variantes de nom et mots-clés ne sont pas
+transmis. Chaque requête passe par l'API externe, qui voit le terme recherché. Son
+plan peut facturer l'usage et les conditions de conservation dépendent du contrat
+du fournisseur ; la notice Brave indique une conservation possible des journaux
+de requêtes jusqu'à 90 jours. Consulter la
+[revue contractuelle préliminaire](../PROVIDER_LEGAL_REVIEW.md), les
+[tarifs](https://brave.com/search/api/) et les conditions avant activation. La
+limite locale est de cinq requêtes par minute et le nombre de requêtes par scan
+est borné.
 
 ### SearXNG local
 

@@ -317,11 +317,11 @@ continuer à mettre à jour documentation et tests dans le même commit.
 - [x] SearXNG est désormais disponible sur la VM pour les prochains scans. Aucun
       scan avec le profil utilisateur n'a été lancé pendant le déploiement ; les
       requêtes de profil devront être explicitement confirmées dans l'interface.
-- [ ] Un scan avec le profil via Brave reste bloqué jusqu'à la configuration
-      d'une clé Brave dans l'interface d'administration. La VM ne possède pas de
-      clé Brave configurée ; aucune donnée du profil n'a donc été envoyée. Après
-      configuration, l'utilisateur doit lancer « Recherche globale » et confirmer
-      explicitement l'envoi au fournisseur.
+- [ ] Un scan avec le profil via Brave reste bloqué jusqu'à la validation juridique
+      et contractuelle, l'activation explicite du verrou opérateur et la configuration
+      d'une clé Brave. La VM ne possède ni approbation ni clé ; aucune donnée du
+      profil n'a donc été envoyée. L'utilisateur devra ensuite lancer « Recherche
+      globale » et confirmer explicitement l'envoi au fournisseur.
 
 ## Phase 0 — analyse
 
@@ -483,6 +483,10 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
 - [x] Désinstallation native avec conservation des données par défaut et purge
       séparée nécessitant une confirmation explicite.
 - [ ] Revue juridique et contractuelle avant tout fournisseur externe réel.
+- [x] Revue technique préliminaire documentée des conditions publiées pour Brave,
+      GitHub, GitLab, Bluesky et Internet Archive. Elle a conduit à bloquer Brave
+      par défaut au niveau configuration et exécution ; elle ne vaut pas avis ni
+      validation juridique, qui restent nécessaires avant activation réelle.
 - [x] Tests hermétiques des cinq formats de rapport et de leurs protections.
 - [x] Sauvegarde/restauration PostgreSQL réellement exercée avec `pg_dump` et
       `pg_restore` sur PostgreSQL 17.11 temporaire : restauration contrôlée d'une

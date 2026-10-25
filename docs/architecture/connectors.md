@@ -131,8 +131,10 @@ la minimisation et la réduction des erreurs, sans accès Internet.
 ## Brave Search
 
 Le connecteur `brave` utilise exclusivement `GET /res/v1/web/search` de l'API
-officielle. Il est facultatif, exige un jeton configuré dans le coffre chiffré
-(ou via la variable d'environnement documentée), limite chaque scan à cinq
+officielle. Il est facultatif et bloqué par défaut. Il exige à la fois un jeton
+configuré dans le coffre chiffré (ou via la variable d'environnement documentée)
+et l'approbation opérateur `DIGITALFOOTPRINT_BRAVE_CONTRACT_APPROVED=true`, qui ne
+doit suivre qu'une revue juridique du plan et des droits de stockage. Il limite chaque scan à cinq
 requêtes et dix résultats par requête et applique un plafond local de cinq
 requêtes par minute. Le jeton est envoyé uniquement dans `X-Subscription-Token` ;
 les redirections sont désactivées. Les erreurs distantes et corps HTTP ne sont
@@ -152,7 +154,8 @@ Le bouton **Recherche globale** sélectionne côté interface tous les connecteu
 activés et prêts dont les types d'identifiants sont présents dans le profil. Il
 exige au moins un connecteur doté de la capacité `web_search`, afin de ne pas
 confondre des consultations spécialisées GitHub/GitLab/Wayback avec une recherche
-générale. Brave reste indisponible tant que sa clé n'est pas configurée ; SearXNG
+générale. Brave reste indisponible tant que l'approbation contractuelle et sa clé
+ne sont pas configurées ; SearXNG
 reste indisponible tant qu'une instance locale n'est pas définie. L'API rejette
 les scans ou planifications sans configuration et exige une confirmation
 explicite pour tout envoi à Brave ou SearXNG.

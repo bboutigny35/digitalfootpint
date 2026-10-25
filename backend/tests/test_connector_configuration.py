@@ -1,4 +1,14 @@
+from typing import Any, cast
+from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.connectors import configuration as connector_configuration
+from app.connectors.configuration import connector_is_ready
+from app.connectors.production import build_production_registry
+from app.core.config import Settings
 
 
 def test_admin_disables_connector_and_pending_work(
@@ -88,3 +98,38 @@ def test_connector_configuration_requires_admin_and_csrf(
         ).status_code
         == 403
     )
+
+
+def test_brave_is_not_ready_without_contract_approval(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database = MagicMock(spec=Session)
+    settings = Settings(
+        _env_file=None,
+        brave_api_token="configured-but-contract-not-approved",  # noqa: S106
+        brave_contract_approved=False,
+    )
+    monkeypatch.setattr(connector_configuration, "get_settings", lambda: settings)
+
+    assert connector_is_ready(database, "brave", requires_api_key=True) is False
+    database.get.assert_not_called()
+
+
+def test_brave_contract_gate_removes_token_from_runtime_connector() -> None:
+    blocked = build_production_registry(
+        Settings(
+            _env_file=None,
+            brave_api_token="configured-token",  # noqa: S106
+            brave_contract_approved=False,
+        )
+    ).get("brave")
+    approved = build_production_registry(
+        Settings(
+            _env_file=None,
+            brave_api_token="configured-token",  # noqa: S106
+            brave_contract_approved=True,
+        )
+    ).get("brave")
+
+    assert cast(Any, blocked)._token is None
+    assert cast(Any, approved)._token == "configured-token"
