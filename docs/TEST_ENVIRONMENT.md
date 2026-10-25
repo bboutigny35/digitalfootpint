@@ -1,6 +1,6 @@
 # Environnement de test DEB13-TEST
 
-Dernier inventaire : 24 octobre 2026.
+Dernier inventaire : 25 octobre 2026.
 
 ## Périmètre et précautions
 
@@ -16,7 +16,7 @@ libvirt.
 | Nom libvirt | `DEB13-TEST` |
 | UUID | `1a144183-b50b-485b-be67-588c6ed11453` |
 | Hyperviseur | QEMU/KVM via `qemu:///system` |
-| État au 24 octobre 2026 | active (`running`) |
+| État au 25 octobre 2026 | active (`running`) |
 | Type | HVM, domaine persistant |
 | Processeurs virtuels | 2 |
 | Mémoire maximale/allouée | 2 Gio (`2097152 KiB`) |
@@ -53,6 +53,27 @@ changement global de libvirt n'a été effectué par l'agent.
 - Services Web, worker, Nginx, SearXNG et Docker actifs.
 - Sondes HTTP de l'application et de SearXNG sur loopback : HTTP 200.
 - Conteneur SearXNG actif et sain au moment du contrôle.
+
+## Validation de déploiement du 25 octobre 2026
+
+- Une sauvegarde applicative privée a été créée avant modification dans
+  `/var/backups/digitalfootprint/pre-phase-h-20261025.tar.gz`, en mode `0600`.
+- L'archive source a exclu les secrets, bases et dépendances locales ; son
+  empreinte SHA-256 a été vérifiée dans l'invité avant extraction.
+- La mise à jour native a reconstruit le frontend et appliqué les migrations
+  `0012` à `0019`. Alembic confirme `0019 (head)` sur la base SQLite installée.
+- Les variantes Docker Compose SQLite et PostgreSQL ont chacune atteint leurs
+  healthchecks et répondu sur `/health` depuis un port loopback secondaire.
+- Le premier essai Compose a révélé qu'une URL SearXNG optionnelle vide était
+  rejetée. Le validateur et son test ont été corrigés, puis la mise à jour native
+  et les deux validations Compose ont réussi.
+- Les projets Compose de validation, leurs réseaux et leurs volumes ont été
+  supprimés. Le contrôle final ne montre que le conteneur SearXNG permanent.
+- Après ces opérations, les six unités contrôlées sont actives, le worker indique
+  `NRestarts=0`, l'application répond `{"status":"ok"}` et SearXNG HTTP 200.
+
+Aucun profil personnel, e-mail, jeton fournisseur ou résultat OSINT réel n'a été
+utilisé pendant cette validation.
 
 ## Dernier état documenté antérieurement
 

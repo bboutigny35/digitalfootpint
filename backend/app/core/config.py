@@ -51,7 +51,7 @@ class Settings(BaseSettings):
             "http://127.0.0.1:8888/search",
             "http://searxng:8080/search",
         }
-        if value is not None and value.rstrip("/") not in allowed:
+        if value and value.rstrip("/") not in allowed:
             raise ValueError("DIGITALFOOTPRINT_SEARXNG_URL doit viser l’instance SearXNG locale")
         return value.rstrip("/") if value else None
 

@@ -1,6 +1,6 @@
 # Avancement
 
-Dernière mise à jour : 24 octobre 2026.
+Dernière mise à jour : 25 octobre 2026.
 
 ## Phase A — audit de découverte Web (24 octobre 2026)
 
@@ -192,6 +192,32 @@ La phase G est **terminée pour son périmètre automatisé** : revue des preuve
 audit statique de toutes les vues, tests de composants et parcours Chromium
 multi-largeurs sont validés. Les contrôles manuels de contenus extrêmes et de
 navigation clavier exhaustive restent recommandés avant une version stable.
+
+## Phase H — déploiement et tests
+
+- [x] Vérifier l'identité et l'état de `DEB13-TEST` avant modification : UUID
+      attendu, domaine actif, 2 vCPU, 2 Gio et espace disque disponible.
+- [x] Créer avant déploiement la sauvegarde applicative privée
+      `/var/backups/digitalfootprint/pre-phase-h-20261025.tar.gz` en mode `0600`.
+- [x] Transférer une archive source excluant configuration, bases, environnements
+      virtuels, dépendances et résultats de tests, puis contrôler son SHA-256 avant
+      extraction.
+- [x] Exécuter la mise à jour native idempotente : frontend reconstruit, migrations
+      `0012` à `0019` appliquées et révision finale confirmée à `0019 (head)`.
+- [x] Contrôler les unités Web, worker, Nginx, SearXNG, Docker et rétention, toutes
+      actives ; le worker reste à `NRestarts=0`, l'application répond
+      `{"status":"ok"}` et SearXNG répond HTTP 200 sur loopback.
+- [x] Valider sur la VM les variantes Docker Compose SQLite et PostgreSQL dans des
+      projets éphémères isolés, avec healthchecks et sondes HTTP réussis, puis
+      supprimer leurs conteneurs, réseaux et volumes dédiés.
+- [x] Corriger le défaut révélé par Compose : l'URL SearXNG optionnelle fournie
+      comme chaîne vide est désormais normalisée en absence de configuration,
+      avec test de non-régression, Ruff et mypy ciblés réussis.
+
+La phase H est **terminée pour les installations et validations automatisées**.
+La mise à jour native et les deux variantes Compose ont été exercées sur
+`DEB13-TEST` sans profil personnel ni résultat OSINT réel. Les ressources Compose
+éphémères ont été retirées ; seule l'instance SearXNG permanente reste active.
 
 ## Évolution — recherche SearXNG auto-hébergée
 

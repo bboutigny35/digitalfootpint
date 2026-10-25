@@ -25,6 +25,7 @@ def test_example_secret_is_rejected_in_production(monkeypatch: object) -> None:
 
 def test_searxng_endpoint_is_restricted_to_supported_local_origins() -> None:
     assert Settings(_env_file=None).searxng_url is None
+    assert Settings(_env_file=None, searxng_url="").searxng_url is None
     assert (
         Settings(_env_file=None, searxng_url="http://127.0.0.1:8888/search").searxng_url
         == "http://127.0.0.1:8888/search"
