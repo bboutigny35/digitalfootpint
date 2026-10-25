@@ -235,6 +235,21 @@ La mise à jour native et les deux variantes Compose ont été exercées sur
 La phase I est **terminée pour le processus local**. Aucun tag, push, remote ni
 publication n'a été créé ; ces actions exigent toujours une autorisation explicite.
 
+## Phase J — documentation
+
+- [x] Maintenir l'audit, l'architecture et la corrélation dans leurs documents
+      dédiés, sans présenter les connecteurs reportés comme disponibles.
+- [x] Ajouter les guides obligatoires de configuration, sécurité, API,
+      déploiement et tests de la découverte Web.
+- [x] Relier ces guides depuis le README et vers les procédures canoniques
+      d'installation, administration, sécurité et contribution.
+- [x] Documenter les limites : consentement, absence d'exhaustivité, attribution
+      incertaine, sources non fiables, tests hors réseau et revue juridique.
+
+La phase J est **terminée pour les livrables documentaires prévus**. Les guides
+décrivent le comportement de développement actuel ; toute évolution publique doit
+continuer à mettre à jour documentation et tests dans le même commit.
+
 ## Évolution — recherche SearXNG auto-hébergée
 
 - [x] Connecteur SearXNG local : API JSON via POST, maximum cinq requêtes par

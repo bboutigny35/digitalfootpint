@@ -71,6 +71,15 @@ mypy app
 La documentation d'architecture et les limites connues se trouvent dans
 [`docs/`](docs/).
 
+Pour la chaîne de découverte Web, consulter l'[audit](docs/WEB_DISCOVERY_AUDIT.md),
+l'[architecture](docs/WEB_DISCOVERY_ARCHITECTURE.md), la
+[configuration](docs/WEB_DISCOVERY_CONFIGURATION.md), la
+[sécurité](docs/WEB_DISCOVERY_SECURITY.md), l'[API](docs/WEB_DISCOVERY_API.md), le
+[déploiement](docs/WEB_DISCOVERY_DEPLOYMENT.md) et les
+[tests](docs/WEB_DISCOVERY_TESTS.md). La corrélation est décrite dans
+[`docs/IDENTITY_CORRELATION.md`](docs/IDENTITY_CORRELATION.md) et la préparation
+d'une version dans [`docs/RELEASE_PROCESS.md`](docs/RELEASE_PROCESS.md).
+
 ## Démarrage Docker Compose
 
 Après avoir remplacé la clé d'exemple dans `.env` :

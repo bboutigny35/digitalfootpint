@@ -34,18 +34,17 @@ changelog.
 5. Calculer la version selon SemVer. Ne jamais réutiliser ni déplacer un tag
    publié.
 6. Mettre à jour ensemble les métadonnées suivantes :
-
    - `backend/app/version.py` avec la version SemVer publique ;
    - `backend/pyproject.toml` avec l'équivalent PEP 440 ;
    - `frontend/package.json` et `frontend/package-lock.json` avec SemVer.
 
    Les correspondances de prépublication sont :
 
-   | SemVer public | Python / PEP 440 |
-   | --- | --- |
-   | `1.0.0-beta.1` | `1.0.0b1` |
-   | `1.0.0-rc.1` | `1.0.0rc1` |
-   | `1.0.0` | `1.0.0` |
+   | SemVer public  | Python / PEP 440 |
+   | -------------- | ---------------- |
+   | `1.0.0-beta.1` | `1.0.0b1`        |
+   | `1.0.0-rc.1`   | `1.0.0rc1`       |
+   | `1.0.0`        | `1.0.0`          |
 
 7. Rejouer au minimum les tests de version, le build frontend et les validations
    complètes affectées. Contrôler aussi la version OpenAPI et l'aperçu admin.
