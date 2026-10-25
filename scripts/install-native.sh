@@ -123,6 +123,8 @@ find "$FRONTEND_ROOT" -type f -exec chmod 0644 {} +
 
 runuser -u "$APP_USER" -- /bin/sh -c \
   'cd /opt/digitalfootprint/backend && exec .venv/bin/alembic upgrade head'
+chown -R "$APP_USER":"$APP_GROUP" "$STATE_ROOT"
+chmod -R go-rwx "$STATE_ROOT"
 
 install -o root -g root -m 0644 "$SCRIPT_ROOT/deploy/systemd/digitalfootprint-web.service" \
   /etc/systemd/system/digitalfootprint-web.service

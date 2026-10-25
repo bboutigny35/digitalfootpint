@@ -11,23 +11,23 @@ libvirt.
 
 ## Identité et état observés
 
-| Élément | Valeur observée |
-| --- | --- |
-| Nom libvirt | `DEB13-TEST` |
-| UUID | `1a144183-b50b-485b-be67-588c6ed11453` |
-| Hyperviseur | QEMU/KVM via `qemu:///system` |
-| État au 25 octobre 2026 | active (`running`) |
-| Type | HVM, domaine persistant |
-| Processeurs virtuels | 2 |
-| Mémoire maximale/allouée | 2 Gio (`2097152 KiB`) |
-| Sécurité libvirt | AppArmor |
-| Démarrage automatique | désactivé |
-| Sauvegarde gérée | aucune |
-| Snapshots libvirt | aucun listé |
-| Interface | virtio sur le réseau libvirt `default` |
-| Adresse MAC | `52:54:00:41:03:18` |
-| Adresse IPv4 invitée | `192.168.122.25/24` |
-| Réseau libvirt | `default`, actif, persistant et autostart |
+| Élément                  | Valeur observée                           |
+| ------------------------ | ----------------------------------------- |
+| Nom libvirt              | `DEB13-TEST`                              |
+| UUID                     | `1a144183-b50b-485b-be67-588c6ed11453`    |
+| Hyperviseur              | QEMU/KVM via `qemu:///system`             |
+| État au 25 octobre 2026  | active (`running`)                        |
+| Type                     | HVM, domaine persistant                   |
+| Processeurs virtuels     | 2                                         |
+| Mémoire maximale/allouée | 2 Gio (`2097152 KiB`)                     |
+| Sécurité libvirt         | AppArmor                                  |
+| Démarrage automatique    | désactivé                                 |
+| Sauvegarde gérée         | aucune                                    |
+| Snapshots libvirt        | aucun listé                               |
+| Interface                | virtio sur le réseau libvirt `default`    |
+| Adresse MAC              | `52:54:00:41:03:18`                       |
+| Adresse IPv4 invitée     | `192.168.122.25/24`                       |
+| Réseau libvirt           | `default`, actif, persistant et autostart |
 
 ## Incident de démarrage résolu
 
@@ -74,6 +74,28 @@ changement global de libvirt n'a été effectué par l'agent.
 
 Aucun profil personnel, e-mail, jeton fournisseur ou résultat OSINT réel n'a été
 utilisé pendant cette validation.
+
+## Installation propre et restauration du 25 octobre 2026
+
+- Une nouvelle sauvegarde applicative et une archive séparée de configuration ont
+  été créées en mode `0600`, puis leurs empreintes SHA-256 ont été contrôlées.
+- La purge explicitement autorisée a supprimé application, configuration, état,
+  frontend et compte système. Leur absence a été vérifiée avant réinstallation.
+- L'installation native complète depuis cet état propre a recréé le compte sans
+  shell, les répertoires privés, le frontend, la base à la migration `0019`, les
+  unités systemd, Nginx et SearXNG. Toutes les sondes ont réussi.
+- La configuration protégée et la sauvegarde ont ensuite été restaurées. Les
+  empreintes différentes avant/après confirment le remplacement effectif de la
+  base, sans publier son contenu.
+- La recette a révélé que le wrapper de restauration n'arrêtait que le Web. Il
+  arrête désormais aussi le worker et la rétention, puis rétablit uniquement les
+  unités précédemment actives.
+- Elle a également révélé un fichier SQLite en mode `0644` dans un répertoire
+  `0700`. L'installation et la restauration imposent maintenant `0700` au
+  répertoire et `0600` à la base ; le correctif a été exercé sur la VM.
+- Après restauration et nouvelle exécution idempotente de l'installateur : six
+  unités actives, worker à `NRestarts=0`, migration `0019 (head)`, application
+  saine et SearXNG HTTP 200.
 
 ## Dernier état documenté antérieurement
 

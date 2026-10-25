@@ -40,8 +40,10 @@ sudo ./scripts/restore.sh /var/backups/digitalfootprint-2026-10-14.tar.gz --yes
 ```
 
 Le script vérifie le format, le moteur et la somme de contrôle avant restauration.
-Il arrête temporairement le service Web s'il était actif et le relance même en cas
-d'échec. Une archive SQLite ne peut pas être restaurée dans PostgreSQL, ni l'inverse.
+Il arrête temporairement le Web, le worker et la rétention s'ils étaient actifs,
+puis rétablit leur état même en cas d'échec. Une archive SQLite ne peut pas être
+restaurée dans PostgreSQL, ni l'inverse. Après restauration native, l'arborescence
+d'état appartient au compte système et ne conserve aucun droit groupe ou autres.
 
 Pour une installation native, `postgresql-client` et une version de
 `pg_dump`/`pg_restore` compatible avec le serveur sont requis ; l'image runtime

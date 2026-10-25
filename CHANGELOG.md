@@ -2,6 +2,9 @@
 
 ## Non publié
 
+- Installation et restauration natives protégées contre les écritures concurrentes
+  et les permissions trop larges : Web, worker et rétention sont arrêtés puis
+  rétablis selon leur état antérieur, et l'état privé perd tout droit groupe/autres.
 - Mise à jour de Vitest vers `4.1.12` après détection de deux vulnérabilités
   modérées dans `@vitest/mocker` ; l'audit npm ne signale plus de vulnérabilité.
 - Version publique centralisée au format SemVer `0.1.0-dev.0` et procédure de

@@ -550,9 +550,10 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
       été supprimés après vérification. L'image a ensuite été reconstruite avec
       l'installation non interactive, et les deux utilitaires ont été vérifiés
       dans un conteneur sans réseau sous l'UID applicatif non-root `10001`.
-- [ ] Tester l’installation native complète Debian 13 sur une instance propre ;
-      l'installation réelle sur l'hôte n'a pas été lancée pour éviter des changements
-      système privilégiés.
+- [x] Tester l'installation native complète sur `DEB13-TEST` après sauvegarde et
+      purge explicitement autorisée : absence de l'application, configuration,
+      données, frontend et compte système vérifiée avant réinstallation ; compte
+      sans shell, permissions, migration `0019`, unités et sondes ensuite validés.
 - [ ] Revue juridique et contractuelle Brave avant activation réelle ; vérifier
       périodiquement les tarifs et conditions du fournisseur. Bing et HIBP restent
       à étudier. Évaluer séparément les licences et comportements de Sherlock et
@@ -565,10 +566,15 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
       deux vulnérabilités modérées dans `@vitest/mocker` 4.1.11 ; Vitest a été mis
       à jour en 4.1.12, puis les 26 tests frontend, typecheck, ESLint, Prettier,
       build et nouvel audit npm sans vulnérabilité ont réussi.
-- [ ] Clore l'audit final après une restauration complète contrôlée de la
-      sauvegarde de `DEB13-TEST`, la recette d'accessibilité manuelle exhaustive et
+- [ ] Clore l'audit final après la recette d'accessibilité manuelle exhaustive et
       les revues juridiques externes. Ces opérations ne sont pas déduites des tests
       automatisés ni déclarées terminées sans validation dédiée.
+- [x] Restaurer réellement la sauvegarde pré-purge sur `DEB13-TEST` et vérifier le
+      remplacement de la base par empreintes distinctes, la révision `0019`, les
+      services, le worker sans redémarrage et les sondes. La recette a révélé puis
+      corrigé deux défauts : le worker et la rétention restaient actifs pendant la
+      restauration, et la base SQLite conservait le mode `0644`. La restauration
+      arrête désormais tous les écrivains et l'état natif est ramené à `0700/0600`.
 - [x] Fermeture explicite des connexions SQLite dans le test de sauvegarde ; la
       suite passe sans avertissement avec `-W error::ResourceWarning`.
 

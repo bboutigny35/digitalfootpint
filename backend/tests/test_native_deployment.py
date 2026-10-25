@@ -9,6 +9,7 @@ def test_native_installer_enforces_local_non_root_layout() -> None:
     assert "--shell /usr/sbin/nologin" in installer
     assert "--host 127.0.0.1" not in installer  # Le host appartient à l'unité systemd.
     assert "chmod -R o-rwx" in installer
+    assert 'chmod -R go-rwx "$STATE_ROOT"' in installer
     assert "FRONTEND_ROOT=/var/www/digitalfootprint" in installer
     assert "chown -R root:www-data" in installer
     assert "DIGITALFOOTPRINT_DATABASE_URL=sqlite:////var/lib/digitalfootprint" in installer
@@ -62,7 +63,12 @@ def test_backup_and_restore_wrappers_protect_native_data() -> None:
     assert '"$BACKUP_COMMAND" "$1"' in backup
     assert '"$2" != "--yes"' in restore
     assert "systemctl stop" in restore
-    assert "trap restart_service EXIT" in restore
+    assert "trap restart_services EXIT" in restore
+    assert "digitalfootprint-web.service" in restore
+    assert "digitalfootprint-worker.service" in restore
+    assert "digitalfootprint-retention.service" in restore
+    assert "digitalfootprint-retention.timer" in restore
+    assert "chmod -R go-rwx /var/lib/digitalfootprint" in restore
     assert "DIGITALFOOTPRINT_DATABASE_URL" not in backup + restore
 
 
