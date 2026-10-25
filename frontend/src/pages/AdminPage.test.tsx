@@ -8,7 +8,7 @@ it('affiche uniquement les métadonnées administratives non sensibles', async (
     const url = String(input)
     if (url.endsWith('/admin/overview')) {
       return Response.json({
-        application_version: '0.1.0-dev',
+        application_version: '0.1.0-dev.0',
         environment: 'test',
         database_backend: 'sqlite',
         cookie_secure: false,
@@ -76,7 +76,7 @@ it('affiche uniquement les métadonnées administratives non sensibles', async (
   vi.stubGlobal('fetch', fetchMock)
   render(<AdminPage />)
 
-  expect(await screen.findByText('0.1.0-dev')).toBeInTheDocument()
+  expect(await screen.findByText('0.1.0-dev.0')).toBeInTheDocument()
   expect(screen.getByText('Configuré')).toBeInTheDocument()
   expect(screen.getByText('profile.update')).toBeInTheDocument()
   expect(
@@ -90,7 +90,7 @@ it('traduit les libellés administratifs en anglais', async () => {
     vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
       if (String(input).endsWith('/admin/overview')) {
         return Response.json({
-          application_version: '0.1.0-dev',
+          application_version: '0.1.0-dev.0',
           environment: 'test',
           database_backend: 'sqlite',
           cookie_secure: true,
@@ -124,7 +124,7 @@ it('traduit les libellés administratifs en anglais', async () => {
   expect(
     await screen.findByRole('heading', { name: 'Administration' }),
   ).toBeInTheDocument()
-  expect(await screen.findByText('0.1.0-dev')).toBeInTheDocument()
+  expect(await screen.findByText('0.1.0-dev.0')).toBeInTheDocument()
   expect(
     screen.getByRole('heading', { name: 'Connectors' }),
   ).toBeInTheDocument()

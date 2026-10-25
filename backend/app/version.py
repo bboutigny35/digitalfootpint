@@ -1,0 +1,3 @@
+"""Version publique de l'application, au format Semantic Versioning."""
+
+__version__ = "0.1.0-dev.0"

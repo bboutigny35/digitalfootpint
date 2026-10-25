@@ -45,6 +45,7 @@ from app.schemas.discovery import (
     WebSourceUpdate,
 )
 from app.security.connector_secrets import ConnectorSecretVault, SecretVaultError
+from app.version import __version__
 
 router = APIRouter(prefix="/admin", tags=["administration"])
 _backup_lock = Lock()
@@ -90,7 +91,7 @@ def admin_overview(
     settings = get_settings()
     database_backend = "postgresql" if settings.database_url.startswith("postgresql") else "sqlite"
     return AdminOverviewRead(
-        application_version="0.1.0-dev",
+        application_version=__version__,
         environment=settings.environment,
         database_backend=database_backend,
         cookie_secure=settings.cookie_secure,

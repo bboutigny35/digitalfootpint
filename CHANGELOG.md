@@ -2,6 +2,12 @@
 
 ## Non publié
 
+- Version publique centralisée au format SemVer `0.1.0-dev.0` et procédure de
+  release reproductible avec correspondance PEP 440, contrôles et autorisations.
+- Déploiement de validation sur Debian 13 : mise à jour native jusqu'à la migration
+  `0019` et variantes Compose SQLite/PostgreSQL contrôlées avec healthchecks.
+- Correction de la configuration Compose sans SearXNG : une URL optionnelle vide
+  est désormais traitée comme une absence de configuration.
 - Planification de recherche déterministe avec modes rapide, standard et
   approfondi, budgets bornés et prévisualisation privée par profil.
 - Profils enrichis avec anciens pseudonymes, téléphones, localisation,

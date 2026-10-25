@@ -14,7 +14,7 @@ def test_admin_overview_and_audit_do_not_expose_secrets(
     client, _csrf = authenticated
     overview = client.get("/api/v1/admin/overview")
     assert overview.status_code == 200
-    assert overview.json()["application_version"] == "0.1.0-dev"
+    assert overview.json()["application_version"] == "0.1.0-dev.0"
     assert overview.json()["database_backend"] == "sqlite"
     assert "database_url" not in overview.json()
     assert "github_api_token" not in overview.json()

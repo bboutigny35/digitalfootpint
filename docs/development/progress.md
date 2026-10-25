@@ -219,6 +219,22 @@ La mise à jour native et les deux variantes Compose ont été exercées sur
 `DEB13-TEST` sans profil personnel ni résultat OSINT réel. Les ressources Compose
 éphémères ont été retirées ; seule l'instance SearXNG permanente reste active.
 
+## Phase I — versioning
+
+- [x] Auditer les versions déclarées, les tags et les remotes : aucun tag ni
+      remote n'est configuré ; l'historique Conventional Commits est conservé.
+- [x] Centraliser la version publique SemVer `0.1.0-dev.0` côté backend et
+      harmoniser les métadonnées frontend ; conserver l'équivalent Python
+      `0.1.0.dev0` conforme à PEP 440.
+- [x] Mettre à jour `CHANGELOG.md` et documenter dans `docs/RELEASE_PROCESS.md` le
+      calcul SemVer, les prépublications, contrôles, métadonnées, commit, tag
+      annoté, vérification et annulation.
+- [x] Définir la trajectoire prudente vers `1.0.0-beta.1`, `1.0.0-rc.1` puis
+      `1.0.0`, conditionnée à la stabilisation des contrats et aux revues restantes.
+
+La phase I est **terminée pour le processus local**. Aucun tag, push, remote ni
+publication n'a été créé ; ces actions exigent toujours une autorisation explicite.
+
 ## Évolution — recherche SearXNG auto-hébergée
 
 - [x] Connecteur SearXNG local : API JSON via POST, maximum cinq requêtes par
