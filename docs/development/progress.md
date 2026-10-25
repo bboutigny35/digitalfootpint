@@ -572,6 +572,11 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
       deux vulnérabilités modérées dans `@vitest/mocker` 4.1.11 ; Vitest a été mis
       à jour en 4.1.12, puis les 26 tests frontend, typecheck, ESLint, Prettier,
       build et nouvel audit npm sans vulnérabilité ont réussi.
+- [x] Déployer le verrou contractuel Brave sur `DEB13-TEST` après sauvegarde privée
+      et transfert d'une archive dont le SHA-256 distant correspond à la source.
+      Les services Web, worker, Nginx, SearXNG et Docker sont actifs, Web et worker
+      ont zéro redémarrage, `/health` répond `{"status":"ok"}` et la sonde SearXNG
+      réussit. Aucun fournisseur externe réel ni profil personnel n'a été interrogé.
 - [ ] Clore l'audit final après la recette d'accessibilité manuelle exhaustive et
       les revues juridiques externes. Ces opérations ne sont pas déduites des tests
       automatisés ni déclarées terminées sans validation dédiée.
