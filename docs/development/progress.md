@@ -543,8 +543,8 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
 - [x] Ajout d'un job PostgreSQL de cycle montée/descente/remontée dans GitHub
       Actions et GitLab CI pour prévenir la régression des types ENUM.
 - [ ] Exécuter les pipelines sur de vrais runners GitHub et GitLab après création
-      d'un commit et configuration d'un remote ; à ce jour, le dépôt local n'a aucun
-      commit ni remote. Aucun push n'a été effectué.
+      et configuration d'un remote. L'historique local est désormais établi, mais
+      aucun remote n'est configuré et aucun push n'a été effectué.
 - [x] Générer les PDF des guides utilisateur et administrateur depuis Markdown,
       avec tests hors réseau, commande dédiée et artefacts CI temporaires.
 - [x] Reconstruire et lancer les variantes Compose SQLite et PostgreSQL : tous les
@@ -577,6 +577,10 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
       Les services Web, worker, Nginx, SearXNG et Docker sont actifs, Web et worker
       ont zéro redémarrage, `/health` répond `{"status":"ok"}` et la sonde SearXNG
       réussit. Aucun fournisseur externe réel ni profil personnel n'a été interrogé.
+- [x] Formaliser l'état de préparation de release dans `docs/RELEASE_READINESS.md` :
+      200 tests backend collectés, validations locales et VM vertes, absence de
+      changement incompatible détecté, mais aucun tag stable tant que les revues
+      juridique et manuelle ainsi que les pipelines distants ne sont pas clos.
 - [ ] Clore l'audit final après la recette d'accessibilité manuelle exhaustive et
       les revues juridiques externes. Ces opérations ne sont pas déduites des tests
       automatisés ni déclarées terminées sans validation dédiée.

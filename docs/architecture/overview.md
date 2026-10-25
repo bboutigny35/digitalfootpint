@@ -43,7 +43,7 @@ Le client de test Starlette repose sur HTTPX2 2.13.1. Les versions exactes sont
 figées dans `backend/pyproject.toml` pour rendre les validations reproductibles.
 
 Frontend validé avec Node.js 20.19.2 : React 19.3, TypeScript 5.9.3, Vite 7.3.7,
-Tailwind CSS 4.1.14, React Router 7.18.4 et Vitest 4.1.11. Ces versions respectent
+Tailwind CSS 4.1.14, React Router 7.18.4 et Vitest 4.1.12. Ces versions respectent
 leurs plages de compatibilité, sont figées dans le lockfile et passent l'audit npm.
 
 ## Décisions structurantes
