@@ -382,7 +382,7 @@ export function SensitiveExposurePage() {
         <section className="panel mt-6">
           <h2 className="section-title">{t('sensitiveHistory')}</h2>
           <p className="section-copy">{t('sensitiveNoAlertDoesNotProve')}</p>
-          <div className="mt-5 overflow-x-auto">
+          <div className="mt-5 overflow-x-auto" tabIndex={0}>
             <table>
               <thead>
                 <tr>

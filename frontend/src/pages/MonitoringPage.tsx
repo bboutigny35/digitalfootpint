@@ -122,7 +122,7 @@ export function MonitoringPage() {
             </button>
           </div>
         </section>
-        <section className="panel mt-6 overflow-x-auto">
+        <section className="panel mt-6 overflow-x-auto" tabIndex={0}>
           <h2 className="section-title">{t('monitoringActiveSchedules')}</h2>
           <table className="mt-4">
             <thead>

@@ -1,5 +1,21 @@
-import { expect, test } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
+import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
+
+async function expectNoAccessibilityViolations(
+  page: Page,
+  testInfo: TestInfo,
+  label: string,
+) {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze()
+  await testInfo.attach(`accessibilite-${label}`, {
+    body: JSON.stringify(results.violations, null, 2),
+    contentType: 'application/json',
+  })
+  expect(results.violations).toEqual([])
+}
 
 test('initialise l’instance et crée un profil d’identité', async ({
   page,
@@ -35,6 +51,11 @@ test('initialise l’instance et crée un profil d’identité', async ({
     page.getByRole('heading', { name: 'Tableau de bord' }),
   ).toBeVisible()
   await expect(page.getByText('1', { exact: true }).first()).toBeVisible()
+  await expectNoAccessibilityViolations(
+    page,
+    testInfo,
+    'tableau-de-bord-mobile',
+  )
 
   await page.getByRole('button', { name: 'Recherches' }).click()
   const braveOption = page
@@ -66,6 +87,7 @@ test('initialise l’instance et crée un profil d’identité', async ({
   await page.getByRole('button', { name: 'Résultats' }).click()
   const resultTitle = 'Profil public de alice-test'
   await expect(page.getByRole('link', { name: resultTitle })).toBeVisible()
+  await expectNoAccessibilityViolations(page, testInfo, 'resultats-mobile')
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -103,6 +125,7 @@ test('initialise l’instance et crée un profil d’identité', async ({
   expect(backupPath).not.toBeNull()
   const backupBytes = await readFile(backupPath!)
   expect([...backupBytes.subarray(0, 2)]).toEqual([0x1f, 0x8b])
+  await expectNoAccessibilityViolations(page, testInfo, 'administration-mobile')
 
   const mobileLanguage = page.locator('#mobile-language-select')
   await mobileLanguage.selectOption('en')
@@ -123,6 +146,11 @@ test('initialise l’instance et crée un profil d’identité', async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true)
+  await expectNoAccessibilityViolations(
+    page,
+    testInfo,
+    'resultats-tablette-sombre',
+  )
   await testInfo.attach('resultats-tablette-anglais-sombre', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',

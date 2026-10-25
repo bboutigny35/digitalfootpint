@@ -102,7 +102,7 @@ export function ReportsPage() {
           </div>
           <p className="notice mt-6">{t('reportCaveat')}</p>
         </section>
-        <section className="panel mt-6 overflow-x-auto">
+        <section className="panel mt-6 overflow-x-auto" tabIndex={0}>
           <h2 className="section-title">{t('reportHistory')}</h2>
           <p className="section-copy">{t('reportMetadataOnly')}</p>
           <table className="mt-4">

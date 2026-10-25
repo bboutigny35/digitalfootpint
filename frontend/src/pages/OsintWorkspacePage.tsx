@@ -902,7 +902,7 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                   .join(', ') || t('workspaceUnavailable')}
               </p>
             </section>
-            <section className="panel overflow-x-auto">
+            <section className="panel overflow-x-auto" tabIndex={0}>
               <h2 className="section-title">{t('workspaceHistory')}</h2>
               <table className="mt-4">
                 <thead>
@@ -954,7 +954,11 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
               {scans.length === 0 && <Empty text={t('workspaceNoSearches')} />}
             </section>
             {platformChecks && (
-              <section className="panel overflow-x-auto" aria-live="polite">
+              <section
+                className="panel overflow-x-auto"
+                aria-live="polite"
+                tabIndex={0}
+              >
                 <h2 className="section-title">
                   {t('workspacePlatformChecksTitle')}
                 </h2>
@@ -1057,7 +1061,7 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                   <p className="mt-4 text-xs text-slate-500">
                     {comparison.methodology_note}
                   </p>
-                  <div className="mt-4 overflow-x-auto">
+                  <div className="mt-4 overflow-x-auto" tabIndex={0}>
                     <table>
                       <thead>
                         <tr>
@@ -1173,10 +1177,10 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                 </button>
               </div>
             </form>
-            <p className="mt-4 text-sm text-slate-500">
+            <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
               {formatMessage(t('workspaceCount'), { count: resultPage.total })}
             </p>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0}>
               <table className="mt-4">
                 <thead>
                   <tr>
@@ -1197,7 +1201,7 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                           <td>{result.connector_id}</td>
                           <td>
                             <a
-                              className="font-semibold text-teal-700"
+                              className="font-semibold text-teal-700 dark:text-teal-300"
                               href={result.canonical_url}
                               target="_blank"
                               rel="noreferrer"
@@ -1205,7 +1209,7 @@ export function OsintWorkspacePage({ section }: { section: WorkspaceSection }) {
                               {result.title}{' '}
                               <ExternalLink className="inline" size={14} />
                             </a>
-                            <p className="mt-1 max-w-xl text-xs text-slate-500">
+                            <p className="mt-1 max-w-xl text-xs text-slate-500 dark:text-slate-400">
                               {result.snippet}
                             </p>
                           </td>

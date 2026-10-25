@@ -330,10 +330,12 @@ continuer à mettre à jour documentation et tests dans le même commit.
       20.19.2, npm 9.2.0, Docker 29.9.0, Compose 5.6.0 et PostgreSQL 17.11.
 - [x] Architecture, modèle initial, stratégie de sécurité et versions documentés.
 - [x] Structure initiale, AGENTS.md et documentation créés.
-- [ ] Installer les outils manquants et exécuter une matrice Debian 13 réelle.
+- [x] Installer et exercer la matrice Debian 13 réelle sur `DEB13-TEST` : purge,
+      installation native propre, mise à jour idempotente, sauvegarde/restauration,
+      SQLite, variantes Compose SQLite/PostgreSQL, services et sondes.
 
-La phase 0 reste **partiellement validée** : les décisions et fichiers sont présents,
-mais la compatibilité d'installation Debian ne pourra être vérifiée qu'en phase 5.
+La phase 0 est **terminée** ; la compatibilité Debian initialement reportée a été
+vérifiée pendant la phase H et la recette finale de restauration.
 
 ## Phase 1 — socle backend
 
@@ -569,6 +571,10 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
 - [ ] Clore l'audit final après la recette d'accessibilité manuelle exhaustive et
       les revues juridiques externes. Ces opérations ne sont pas déduites des tests
       automatisés ni déclarées terminées sans validation dédiée.
+- [x] Renforcer l'audit d'accessibilité automatisé avec axe WCAG 2 A/AA et 2.1
+      A/AA sur quatre états mobile/tablette. Le premier passage a révélé puis fait
+      corriger l'accès clavier aux régions défilables et plusieurs contrastes du
+      thème sombre ; le parcours Chromium repasse ensuite sans violation axe.
 - [x] Restaurer réellement la sauvegarde pré-purge sur `DEB13-TEST` et vérifier le
       remplacement de la base par empreintes distinctes, la révision `0019`, les
       services, le worker sans redémarrage et les sondes. La recette a révélé puis

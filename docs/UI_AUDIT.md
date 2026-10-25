@@ -1,6 +1,6 @@
 # Audit de l'interface
 
-Audit statique et automatisé réalisé le 24 octobre 2026 sur les vues React.
+Audit statique et automatisé réalisé les 24 et 25 octobre 2026 sur les vues React.
 Cette vérification ne remplace pas encore une recette visuelle multi-navigateurs.
 
 ## Périmètre examiné
@@ -43,6 +43,12 @@ restent affichés comme données et ne sont pas présentés comme texte d'interf
 - aucune case d'ajout aux profils confirmés précochée ;
 - boutons de preuve nommés par résultat et région associée identifiable ;
 - tests de composants sans réseau réel, build TypeScript, ESLint et Prettier.
+- audit axe WCAG 2 A/AA et 2.1 A/AA sans violation sur le tableau de bord mobile,
+  les résultats mobiles, l'administration mobile et les résultats tablette sombre ;
+- zones de tableaux défilables accessibles au clavier, en particulier dans
+  l'administration ;
+- contrastes corrigés pour les textes secondaires, en-têtes et liens du thème
+  sombre révélés par le premier passage axe.
 
 ## Reste à valider
 
@@ -54,7 +60,9 @@ validation rapide, l'export et la sauvegarde. Il joint au rapport les captures
 des résultats en mobile français clair et en tablette anglaise sombre.
 
 Le test vérifie aussi l'absence de débordement horizontal global aux deux petites
-largeurs et l'accès clavier au bouton de thème depuis le sélecteur de langue.
-Les tableaux conservent leur propre défilement horizontal. Les contenus longs
-et une navigation clavier exhaustive de chaque formulaire restent des contrôles
-manuels recommandés, mais ne bloquent plus les critères automatisés de la phase.
+largeurs, l'accès clavier au bouton de thème depuis le sélecteur de langue et
+l'absence de violation axe sur quatre états représentatifs. Les tableaux
+conservent leur propre défilement horizontal et deviennent focalisables lorsque
+leur contenu doit défiler. Les contenus longs, les autres navigateurs et une
+navigation clavier exhaustive de chaque formulaire restent des contrôles manuels
+recommandés, mais ne bloquent plus les critères automatisés de la phase.

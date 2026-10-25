@@ -2,6 +2,8 @@
 
 ## Non publié
 
+- Audit axe intégré au parcours Chromium mobile/tablette, avec correction de
+  l'accès clavier aux régions défilables et de contrastes du thème sombre.
 - Installation et restauration natives protégées contre les écritures concurrentes
   et les permissions trop larges : Web, worker et rétention sont arrêtés puis
   rétablis selon leur état antérieur, et l'état privé perd tout droit groupe/autres.

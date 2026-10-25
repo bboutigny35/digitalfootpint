@@ -113,7 +113,7 @@ export function RemovalRequestsPage() {
               {t('removalCreateDraft')}
             </button>
           </form>
-          <section className="panel overflow-x-auto">
+          <section className="panel overflow-x-auto" tabIndex={0}>
             <h2 className="section-title">{t('removalTracked')}</h2>
             <table className="mt-4">
               <thead>

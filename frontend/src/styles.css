@@ -27,6 +27,9 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
+  .dark th {
+    color: #94a3b8;
+  }
   td {
     border-top: 1px solid #e2e8f0;
     padding: 1rem;

@@ -380,7 +380,7 @@ export function AdminPage() {
             </code>
           </section>
         </div>
-        <section className="panel mt-6 overflow-x-auto">
+        <section className="panel mt-6 overflow-x-auto" tabIndex={0}>
           <h2 className="section-title">{t('adminPlatformCatalog')}</h2>
           <p className="section-copy">{t('adminPlatformCatalogNotice')}</p>
           <table className="mt-4">
@@ -459,7 +459,7 @@ export function AdminPage() {
             ))}
           </div>
         </section>
-        <section className="panel mt-6 overflow-x-auto">
+        <section className="panel mt-6 overflow-x-auto" tabIndex={0}>
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">{t('adminAuditLog')}</h2>
             <span className="text-sm text-slate-500">
