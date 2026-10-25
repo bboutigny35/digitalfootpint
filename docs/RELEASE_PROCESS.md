@@ -8,8 +8,9 @@ production.
 ## État et trajectoire
 
 La version publique courante est `0.1.0-dev.0`. Le paquet Python utilise son
-équivalent PEP 440 `0.1.0.dev0`. Aucun tag historique ni remote n'est configuré au
-25 octobre 2026.
+équivalent PEP 440 `0.1.0.dev0`. Aucun tag historique n'est configuré au
+25 octobre 2026. Le remote GitHub `origin` est configuré et la branche `master`
+y est publiée ; toute publication de version reste une opération distincte.
 
 Le projet reste en série `0.x` tant que les contrats publics, la revue juridique
 des fournisseurs externes et les critères de la première version ne sont pas

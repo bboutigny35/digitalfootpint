@@ -27,8 +27,8 @@ tag de release n'est créé par cette revue.
    toute activation réelle de Brave ou d'un autre fournisseur non approuvé.
 2. Réaliser la recette manuelle exhaustive annoncée : navigation clavier de tous
    les formulaires, contenus extrêmes et navigateurs supplémentaires.
-3. Configurer un remote autorisé, pousser une branche et obtenir les pipelines
-   GitHub/GitLab verts sur de vrais runners.
+3. Obtenir les pipelines GitHub verts sur de vrais runners après le premier push.
+   GitLab reste non configuré et n'est donc pas vérifié à distance.
 4. Choisir explicitement la version à publier après ces validations, préparer le
    changelog et les trois métadonnées de version dans un même commit, puis faire
    valider ce commit avant le tag annoté.
@@ -36,6 +36,7 @@ tag de release n'est créé par cette revue.
 ## Décision
 
 Le code est prêt pour poursuivre une recette de prépublication contrôlée, mais
-pas pour déclarer une version stable ni activer Brave. L'absence de remote empêche
-aussi toute conclusion sur les CI distantes. Ces limites ne sont pas remplacées
-par les tests locaux et ne doivent pas être requalifiées en contrôles réussis.
+pas pour déclarer une version stable ni activer Brave. Le dépôt GitHub privé est
+publié, mais le résultat de ses workflows n'est pas encore confirmé. Ces limites
+ne sont pas remplacées par les tests locaux et ne doivent pas être requalifiées
+en contrôles réussis.

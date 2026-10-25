@@ -221,8 +221,9 @@ La mise à jour native et les deux variantes Compose ont été exercées sur
 
 ## Phase I — versioning
 
-- [x] Auditer les versions déclarées, les tags et les remotes : aucun tag ni
-      remote n'est configuré ; l'historique Conventional Commits est conservé.
+- [x] Auditer les versions déclarées, les tags et les remotes : aucun tag n'est
+      configuré ; l'historique Conventional Commits est conservé. Le remote GitHub
+      `origin` a ensuite été ajouté et `master` publié le 25 octobre 2026.
 - [x] Centraliser la version publique SemVer `0.1.0-dev.0` côté backend et
       harmoniser les métadonnées frontend ; conserver l'équivalent Python
       `0.1.0.dev0` conforme à PEP 440.
@@ -232,8 +233,9 @@ La mise à jour native et les deux variantes Compose ont été exercées sur
 - [x] Définir la trajectoire prudente vers `1.0.0-beta.1`, `1.0.0-rc.1` puis
       `1.0.0`, conditionnée à la stabilisation des contrats et aux revues restantes.
 
-La phase I est **terminée pour le processus local**. Aucun tag, push, remote ni
-publication n'a été créé ; ces actions exigent toujours une autorisation explicite.
+La phase I est **terminée pour le processus local**. Le remote GitHub et le premier
+push ont été explicitement autorisés et réalisés ; aucun tag ni publication de
+version n'a été créé.
 
 ## Phase J — documentation
 
@@ -542,9 +544,9 @@ Compose PostgreSQL et les sauvegardes/restaurations depuis son backend ont aussi
       des scripts natifs.
 - [x] Ajout d'un job PostgreSQL de cycle montée/descente/remontée dans GitHub
       Actions et GitLab CI pour prévenir la régression des types ENUM.
-- [ ] Exécuter les pipelines sur de vrais runners GitHub et GitLab après création
-      et configuration d'un remote. L'historique local est désormais établi, mais
-      aucun remote n'est configuré et aucun push n'a été effectué.
+- [ ] Confirmer les pipelines sur de vrais runners. `master` est publié sur le
+      remote GitHub autorisé et doit déclencher GitHub Actions ; aucun remote
+      GitLab n'est configuré. Le dépôt privé n'est pas lisible par l'API publique.
 - [x] Générer les PDF des guides utilisateur et administrateur depuis Markdown,
       avec tests hors réseau, commande dédiée et artefacts CI temporaires.
 - [x] Reconstruire et lancer les variantes Compose SQLite et PostgreSQL : tous les
